@@ -1,0 +1,70 @@
+services:
+  # --- Infrastructure ---
+  postgres:
+    image: postgres:18.1-alpine
+    container_name: report-postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: reportdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:8.4.0-alpine
+    container_name: report-redis
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    image: rabbitmq:4.2-management-alpine
+    container_name: report-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  # --- Application ---
+  api:
+    container_name: report-api
+    build:
+      context: ../
+      dockerfile: src/GenericReportGenerator.Api/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      #- ConnectionStrings__Database=Host=postgres;Database=reportdb;Username=admin;Password=password
+      #- ConnectionStrings__Redis=redis:6379
+      #- RabbitMq__Host=rabbitmq
+      #- Storage__ReportPath=/app/generated_reports
+    volumes:
+      - ../generated_reports:/app/generated_reports
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+
+  worker:
+    container_name: report-worker
+    build:
+      context: ../
+      dockerfile: src/GenericReportGenerator.Worker/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      #- ConnectionStrings__Database=Host=postgres;Database=reportdb;Username=admin;Password=password
+      #- ConnectionStrings__Redis=redis:6379
+      #- RabbitMq__Host=rabbitmq
+      #- Storage__ReportPath=/app/generated_reports
+    volumes:
+      - ../generated_reports:/app/generated_reports
+    depends_on:
+      - postgres
+      - rabbitmq
+
+volumes:
+  postgres_data:

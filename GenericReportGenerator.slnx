@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/deploy/">
+    <File Path="deploy/docker-compose.yml" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/GenericReportGenerator.Api/GenericReportGenerator.Api.csproj" Id="e48f5f4e-a8f5-48d8-a830-61f89330209a">
+      <BuildDependency Project="src/GenericReportGenerator.Core/GenericReportGenerator.Core.csproj" />
+    </Project>
+    <Project Path="src/GenericReportGenerator.Core/GenericReportGenerator.Core.csproj" Id="602b310d-a501-40cf-846f-486433ce5665" />
+    <Project Path="src/GenericReportGenerator.Infrastructure/GenericReportGenerator.Infrastructure.csproj" Id="40237a4f-a911-4774-9ce0-9e64cb712b52">
+      <BuildDependency Project="src/GenericReportGenerator.Core/GenericReportGenerator.Core.csproj" />
+    </Project>
+    <Project Path="src/GenericReportGenerator.Worker/GenericReportGenerator.Worker.csproj" Id="69807370-2eb3-4323-b35c-79b687c2d88a">
+      <BuildDependency Project="src/GenericReportGenerator.Core/GenericReportGenerator.Core.csproj" />
+    </Project>
+  </Folder>
+  <Folder Name="/tests/" />
+</Solution>
