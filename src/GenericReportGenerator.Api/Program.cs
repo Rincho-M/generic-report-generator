@@ -1,13 +1,21 @@
+using FluentValidation;
 using GenericReportGenerator.Api;
+using GenericReportGenerator.Api.Features.WeatherReports.CreateReport;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Services.
-builder.Services.AddOpenApi();
+IServiceCollection services = builder.Services;
+services.AddCore();
+services.AddInfrastructure(builder.Configuration);
+services.AddOpenApi();
+services.AddValidatorsFromAssemblyContaining(
+    typeof(CreateReportRequestValidator), 
+    includeInternalTypes: true);
+
+WebApplication app = builder.Build();
 
 // Middlewares.
-var app = builder.Build();
-
 app.UseHttpsRedirection();
 
 // Endpoints.

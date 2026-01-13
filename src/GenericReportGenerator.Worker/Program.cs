@@ -1,7 +1,11 @@
 using GenericReportGenerator.Worker;
 
-var builder = Host.CreateApplicationBuilder(args);
+HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddHostedService<Worker>();
 
-var host = builder.Build();
+IServiceCollection services = builder.Services;
+services.AddCore();
+services.AddInfrastructure(builder.Configuration);
+
+IHost host = builder.Build();
 host.Run();

@@ -9,8 +9,13 @@ services:
       POSTGRES_DB: reportdb
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    # volumes:
+      # - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d reportdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:8.4.0-alpine
@@ -27,9 +32,12 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    # volumes:
+    #   - rabbitmq_data:/var/lib/rabbitmq
 
   # --- Application ---
   api:
+    image: report-api:dev
     container_name: report-api
     build:
       context: ../
@@ -38,33 +46,57 @@ services:
       - "8080:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      #- ConnectionStrings__Database=Host=postgres;Database=reportdb;Username=admin;Password=password
+      - ConnectionStrings__Database=Host=postgres;Database=reportdb;Username=admin;Password=admin
       #- ConnectionStrings__Redis=redis:6379
-      #- RabbitMq__Host=rabbitmq
-      #- Storage__ReportPath=/app/generated_reports
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__VirtualHost=/
+      - RabbitMq__Username=admin
+      - RabbitMq__Password=admin
+      - ReportFiles__BasePath=/app/generated_reports
     volumes:
-      - ../generated_reports:/app/generated_reports
+      - ../assets/generated_reports:/app/generated_reports
     depends_on:
-      - postgres
-      - redis
-      - rabbitmq
+      postgres:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
 
   worker:
+    image: report-worker:dev
     container_name: report-worker
     build:
       context: ../
       dockerfile: src/GenericReportGenerator.Worker/Dockerfile
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      #- ConnectionStrings__Database=Host=postgres;Database=reportdb;Username=admin;Password=password
+      - ConnectionStrings__Database=Host=postgres;Database=reportdb;Username=admin;Password=admin
       #- ConnectionStrings__Redis=redis:6379
-      #- RabbitMq__Host=rabbitmq
-      #- Storage__ReportPath=/app/generated_reports
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__VirtualHost=/
+      - RabbitMq__Username=admin
+      - RabbitMq__Password=admin
+      - ReportFiles__BasePath=/app/generated_reports
     volumes:
-      - ../generated_reports:/app/generated_reports
+      - ../assets/generated_reports:/app/generated_reports
     depends_on:
-      - postgres
-      - rabbitmq
+      postgres:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
 
-volumes:
-  postgres_data:
+  migrations:
+    image: report-migrations:dev
+    container_name: report-migrations
+    build:
+      context: ../
+      dockerfile: src/GenericReportGenerator.Migrations/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__Database=Host=postgres;Database=reportdb;Username=admin;Password=admin
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+# volumes:
+#   postgres_data:
+#   rabbitmq_data:

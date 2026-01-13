@@ -1,23 +1,14 @@
-﻿using GenericReportGenerator.Api.Features.WeatherReports;
-using GenericReportGenerator.Core.WeatherReports;
+﻿using GenericReportGenerator.Core.WeatherReports;
 using GenericReportGenerator.Infrastructure;
 using GenericReportGenerator.Infrastructure.WeatherReports;
+using GenericReportGenerator.Worker.WeatherReports;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
-namespace GenericReportGenerator.Api;
+namespace GenericReportGenerator.Worker;
 
 internal static class DependencyInjection
 {
-    internal static IEndpointRouteBuilder MapEndpoints(this IEndpointRouteBuilder builder)
-    {
-        RouteGroupBuilder group = builder.MapGroup("api");
-
-        WeatherReportRoutes.Map(group);
-
-        return builder;
-    }
-
     internal static IServiceCollection AddCore(this IServiceCollection services)
     {
         services.AddScoped<WeatherReportService>();
@@ -25,7 +16,6 @@ internal static class DependencyInjection
 
         return services;
     }
-
     internal static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
     {
         // Add postgres.
@@ -33,14 +23,16 @@ internal static class DependencyInjection
         {
             options
                 .UseNpgsql(config["ConnectionStrings:Database"]);
-                // TODO: would be nice to add when EFCore.NamingConventions will be updated to 10.0
-                //.UseSnakeCaseNamingConvention();
+            // TODO: would be nice to add when EFCore.NamingConventions will be updated to 10.0
+            //.UseSnakeCaseNamingConvention();
         });
 
         // Add rabbitmq.
-        services.AddMassTransit(busConfigurator =>
+        services.AddMassTransit(busBuilder =>
         {
-            busConfigurator.UsingRabbitMq((context, configurator) =>
+            busBuilder.AddConsumer<CreateWeatherReportMessageConsumer>();
+
+            busBuilder.UsingRabbitMq((context, builder) =>
             {
                 // TODO: config validation or something
                 string host = config["RabbitMq:Host"];
@@ -48,13 +40,13 @@ internal static class DependencyInjection
                 string password = config["RabbitMq:Password"];
                 string username = config["RabbitMq:Username"];
 
-                configurator.Host(host, virtualHost, hostConfig =>
+                builder.Host(host, virtualHost, hostConfig =>
                 {
                     hostConfig.Password(password);
                     hostConfig.Username(username);
                 });
 
-                configurator.UseMessageRetry(r =>
+                builder.UseMessageRetry(r =>
                 {
                     // TODO: config validation or something
                     int retryCount = int.Parse(config["RabbitMq:RetryPolicies:Exponential:RetryCount"]);
@@ -65,7 +57,7 @@ internal static class DependencyInjection
                     r.Exponential(retryCount, minInterval, maxInterval, intervalDelta);
                 });
 
-                configurator.ConfigureEndpoints(context);
+                builder.ConfigureEndpoints(context);
             });
         });
 
