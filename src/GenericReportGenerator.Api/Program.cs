@@ -1,35 +1,65 @@
 using FluentValidation;
 using GenericReportGenerator.Api;
-using GenericReportGenerator.Api.Features.WeatherReports.CreateReport;
+using GenericReportGenerator.Api.ExceptionHandling;
+using Serilog;
 
-WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+// Bootstrap logger.
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-// Services.
-IServiceCollection services = builder.Services;
-services.AddCore();
-services.AddInfrastructure(builder.Configuration);
-services.AddOpenApi();
-services.AddValidatorsFromAssemblyContaining(
-    typeof(CreateReportRequestValidator), 
-    includeInternalTypes: true);
-
-WebApplication app = builder.Build();
-
-// Middlewares.
-app.UseHttpsRedirection();
-
-// Endpoints.
-app.MapEndpoints();
-
-if (app.Environment.IsDevelopment())
+try
 {
-    app.MapOpenApi();
-    app.UseSwaggerUI(options =>
+    WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+    // Services.
+    IServiceCollection services = builder.Services;
+
+    services.AddSerilog((services, logConfig) => logConfig.ReadFrom.Configuration(builder.Configuration));
+
+    services.AddServices(builder.Configuration);
+    services.AddRepositories(builder.Configuration);
+    services.AddDatabase(builder.Configuration);
+    services.AddMessegeBus(builder.Configuration);
+    services.AddOptions(builder.Configuration);
+    services.AddTelemetry(builder.Configuration);
+    services.AddCors(builder.Configuration);
+    services.AddForwardedHeaders(builder.Configuration);
+
+    services.AddOpenApi();
+    services.AddValidatorsFromAssemblyContaining(typeof(Program), includeInternalTypes: true);
+    services.AddExceptionHandler<GlobalExceptionHandler>();
+
+    WebApplication app = builder.Build();
+
+    // Middlewares.
+    app.UseHttpsRedirection();
+    app.UseExceptionHandler(_ => { });
+    app.UseCors();
+    app.UseForwardedHeaders();
+
+    // Endpoints.
+    app.MapEndpoints();
+
+    if (app.Environment.IsDevelopment())
     {
-        options.SwaggerEndpoint(
-            url: "/openapi/v1.json",
-            name: "Generic Report Generator API v1");
-    });
+        app.MapOpenApi();
+        app.UseSwaggerUI(options =>
+        {
+            options.SwaggerEndpoint(
+                url: "/openapi/v1.json",
+                name: "Generic Report Generator API v1");
+        });
+    }
+
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly.");
+}
+finally
+{
+    Log.CloseAndFlush();
 }
 
-app.Run();

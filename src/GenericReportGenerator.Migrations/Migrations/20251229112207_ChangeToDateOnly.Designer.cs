@@ -11,7 +11,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace GenericReportGenerator.Migrations.Migrations
 {
-    [DbContext(typeof(ApiDbContext))]
+    [DbContext(typeof(AppDbContext))]
     [Migration("20251229112207_ChangeToDateOnly")]
     partial class ChangeToDateOnly
     {

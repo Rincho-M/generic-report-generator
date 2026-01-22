@@ -1,60 +1,77 @@
 ﻿using GenericReportGenerator.Api.Features.WeatherReports;
-using GenericReportGenerator.Core.WeatherReports;
+using GenericReportGenerator.Core.WeatherReports.GetFile;
+using GenericReportGenerator.Core.WeatherReports.GetReport;
+using GenericReportGenerator.Core.WeatherReports.QueueReport;
 using GenericReportGenerator.Infrastructure;
-using GenericReportGenerator.Infrastructure.WeatherReports;
+using GenericReportGenerator.Infrastructure.WeatherReports.ReportFiles;
 using MassTransit;
+using MassTransit.Logging;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using OpenTelemetry.Trace;
 
 namespace GenericReportGenerator.Api;
 
-internal static class DependencyInjection
+/// <summary>
+/// Helper DI methods to use in Program.cs.
+/// </summary>
+public static class DependencyInjection
 {
-    internal static IEndpointRouteBuilder MapEndpoints(this IEndpointRouteBuilder builder)
+    public static IEndpointRouteBuilder MapEndpoints(this IEndpointRouteBuilder builder)
     {
         RouteGroupBuilder group = builder.MapGroup("api");
 
-        WeatherReportRoutes.Map(group);
+        Routes.Map(group);
 
         return builder;
     }
 
-    internal static IServiceCollection AddCore(this IServiceCollection services)
+    public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration config)
     {
-        services.AddScoped<WeatherReportService>();
-        services.AddScoped<WeatherReportFileBuilder>();
+        services.AddScoped<QueueReportService>();
+        services.AddScoped<GetReportService>();
+        services.AddScoped<GetFileSerivce>();
 
         return services;
     }
 
-    internal static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
+    public static IServiceCollection AddRepositories(this IServiceCollection services, IConfiguration config)
     {
-        // Add postgres.
-        services.AddDbContext<ApiDbContext>(options =>
+        services.AddScoped<IReportFileRepository, ReportFileRepository>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration config)
+    {
+        services.AddDbContext<AppDbContext>(options =>
         {
-            options
-                .UseNpgsql(config["ConnectionStrings:Database"]);
-                // TODO: would be nice to add when EFCore.NamingConventions will be updated to 10.0
-                //.UseSnakeCaseNamingConvention();
+            options.UseNpgsql(config["ConnectionStrings:Database"]);
         });
 
-        // Add rabbitmq.
-        services.AddMassTransit(busConfigurator =>
+        return services;
+    }
+
+    public static IServiceCollection AddMessegeBus(this IServiceCollection services, IConfiguration config)
+    {
+        services.AddMassTransit(busBuilder =>
         {
-            busConfigurator.UsingRabbitMq((context, configurator) =>
+            busBuilder.UsingRabbitMq((context, builder) =>
             {
                 // TODO: config validation or something
                 string host = config["RabbitMq:Host"];
+                ushort port = ushort.Parse(config["RabbitMq:Port"]);
                 string virtualHost = config["RabbitMq:VirtualHost"];
                 string password = config["RabbitMq:Password"];
                 string username = config["RabbitMq:Username"];
 
-                configurator.Host(host, virtualHost, hostConfig =>
+                builder.Host(host, port, virtualHost, hostConfig =>
                 {
                     hostConfig.Password(password);
                     hostConfig.Username(username);
                 });
 
-                configurator.UseMessageRetry(r =>
+                builder.UseMessageRetry(r =>
                 {
                     // TODO: config validation or something
                     int retryCount = int.Parse(config["RabbitMq:RetryPolicies:Exponential:RetryCount"]);
@@ -65,24 +82,58 @@ internal static class DependencyInjection
                     r.Exponential(retryCount, minInterval, maxInterval, intervalDelta);
                 });
 
-                configurator.ConfigureEndpoints(context);
+                builder.ConfigureEndpoints(context);
             });
         });
 
-        // Add repositories.
-        services.AddScoped<IWeatherReportFileRepository, WeatherReportFileRepository>();
+        return services;
+    }
 
-        // Add integrations.
-        services
-            .AddHttpClient<IWeatherDataRepository, OpenMeteoRepository>()
-            .AddStandardResilienceHandler();
-        services.AddScoped<IWeatherDataRepository, OpenMeteoRepository>();
-
-        // Add typed configs (options pattern).
-        IConfigurationSection openMeteoSection = config.GetSection(OpenMeteoOptions.SectionName);
-        services.Configure<OpenMeteoOptions>(openMeteoSection);
+    public static IServiceCollection AddOptions(this IServiceCollection services, IConfiguration config)
+    {
         IConfigurationSection reportFilesSection = config.GetSection(ReportFilesOptions.SectionName);
         services.Configure<ReportFilesOptions>(reportFilesSection);
+
+        return services;
+    }
+
+    public static IServiceCollection AddTelemetry(this IServiceCollection services, IConfiguration config)
+    {
+        services.AddOpenTelemetry()
+            .WithTracing(tracingBuilder =>
+            {
+                tracingBuilder
+                    .AddHttpClientInstrumentation()
+                    .AddSource(DiagnosticHeaders.DefaultListenerName);
+            });
+
+        return services;
+    }
+
+    public static IServiceCollection AddCors(this IServiceCollection services, IConfiguration config)
+    {
+        services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(corsPolicy =>
+            {
+                string[] origins = config.GetSection("Cors:AllowedOrigins").Get<string[]>();
+                corsPolicy
+                    .WithOrigins(origins)
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials();
+            });
+        });
+
+        return services;
+    }
+
+    public static IServiceCollection AddForwardedHeaders(this IServiceCollection services, IConfiguration config)
+    {
+        services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        });
 
         return services;
     }

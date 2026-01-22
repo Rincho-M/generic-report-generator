@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 // Configuration.
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
-builder.Services.AddDbContext<ApiDbContext>(options =>
+builder.Services.AddDbContext<AppDbContext>(options =>
 {
     string? connectionString = builder.Configuration.GetConnectionString("Database");
     options.UseNpgsql(connectionString, dbBuilder =>
@@ -22,7 +22,7 @@ IHost host = builder.Build();
 
 // Migrations.
 using IServiceScope scope = host.Services.CreateScope();
-ApiDbContext dbContext = scope.ServiceProvider.GetRequiredService<ApiDbContext>();
+AppDbContext dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 ILogger logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
 try
@@ -50,4 +50,10 @@ catch
 {
     logger.LogCritical("Database migration failed.");
     throw;
+}
+
+// To resolve ambiguity issues with 'Program' class in test projects.
+namespace GenericReportGenerator.Migrations
+{
+    public static partial class Program { }
 }

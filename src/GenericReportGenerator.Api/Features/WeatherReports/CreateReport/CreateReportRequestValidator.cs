@@ -2,7 +2,7 @@
 
 namespace GenericReportGenerator.Api.Features.WeatherReports.CreateReport;
 
-internal class CreateReportRequestValidator : AbstractValidator<CreateReportRequest>
+public class CreateReportRequestValidator : AbstractValidator<CreateReportRequest>
 {
     public CreateReportRequestValidator()
     {

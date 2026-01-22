@@ -53,6 +53,7 @@ services:
       - RabbitMq__Username=admin
       - RabbitMq__Password=admin
       - ReportFiles__BasePath=/app/generated_reports
+      - Serilog__WriteTo__0__Args__formatter=Serilog.Formatting.Compact.RenderedCompactJsonFormatter,Serilog.Formatting.Compact
     volumes:
       - ../assets/generated_reports:/app/generated_reports
     depends_on:

@@ -1,10 +1,11 @@
 ﻿namespace GenericReportGenerator.Api.Features.WeatherReports.CreateReport;
 
-internal record CreateReportRequest
+public record CreateReportRequest
 {
     /// <summary>
     /// City name to request a weather report from.
     /// </summary>
+    /// <example>London</example>
     public required string City { get; init; }
 
     /// <summary>

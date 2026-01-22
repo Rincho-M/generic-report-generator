@@ -2,9 +2,9 @@
 
 namespace GenericReportGenerator.Api.Features.WeatherReports.CreateReport;
 
-internal record CreateReportResponse
+public record CreateReportResponse
 {
-    public Guid RequestId { get; init; }
+    public Guid ReportId { get; init; }
 
-    public ReportStatus RequestStatus { get; init; }
+    public ReportStatus ReportStatus { get; init; }
 }

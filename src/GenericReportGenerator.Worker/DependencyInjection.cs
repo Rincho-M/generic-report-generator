@@ -1,36 +1,61 @@
-﻿using GenericReportGenerator.Core.WeatherReports;
+﻿using GenericReportGenerator.Core.WeatherReports.AddFile;
 using GenericReportGenerator.Infrastructure;
-using GenericReportGenerator.Infrastructure.WeatherReports;
+using GenericReportGenerator.Infrastructure.WeatherReports.ReportFiles;
+using GenericReportGenerator.Infrastructure.WeatherReports.WeatherData;
+using GenericReportGenerator.Worker.ExceptionHandling;
 using GenericReportGenerator.Worker.WeatherReports;
 using MassTransit;
+using MassTransit.Logging;
 using Microsoft.EntityFrameworkCore;
+using OpenTelemetry.Trace;
 
 namespace GenericReportGenerator.Worker;
 
-internal static class DependencyInjection
+/// <summary>
+/// Helper DI methods to use in Program.cs.
+/// </summary>
+public static class DependencyInjection
 {
-    internal static IServiceCollection AddCore(this IServiceCollection services)
+    public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration config)
     {
-        services.AddScoped<WeatherReportService>();
-        services.AddScoped<WeatherReportFileBuilder>();
+        services.AddScoped<AddFileService>();
+        services.AddScoped<ReportFileBuilder>();
 
         return services;
     }
-    internal static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
+
+    public static IServiceCollection AddRepositories(this IServiceCollection services, IConfiguration config)
     {
-        // Add postgres.
-        services.AddDbContext<ApiDbContext>(options =>
+        services.AddScoped<IReportFileRepository, ReportFileRepository>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddIntegrations(this IServiceCollection services, IConfiguration config)
+    {
+        services
+            .AddHttpClient<IWeatherDataRepository, OpenMeteoRepository>()
+            .AddStandardResilienceHandler();
+        services.AddScoped<IWeatherDataRepository, OpenMeteoRepository>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration config)
+    {
+        services.AddDbContext<AppDbContext>(options =>
         {
-            options
-                .UseNpgsql(config["ConnectionStrings:Database"]);
-            // TODO: would be nice to add when EFCore.NamingConventions will be updated to 10.0
-            //.UseSnakeCaseNamingConvention();
+            options.UseNpgsql(config["ConnectionStrings:Database"]);
         });
 
-        // Add rabbitmq.
+        return services;
+    }
+
+    public static IServiceCollection AddMessegeBus(this IServiceCollection services, IConfiguration config)
+    {
         services.AddMassTransit(busBuilder =>
         {
-            busBuilder.AddConsumer<CreateWeatherReportMessageConsumer>();
+            busBuilder.AddConsumer<CreateReportFileConsumer>();
 
             busBuilder.UsingRabbitMq((context, builder) =>
             {
@@ -57,24 +82,34 @@ internal static class DependencyInjection
                     r.Exponential(retryCount, minInterval, maxInterval, intervalDelta);
                 });
 
+                builder.UseConsumeFilter(typeof(GlobalExceptionFilter<>), context);
+
                 builder.ConfigureEndpoints(context);
             });
         });
 
-        // Add repositories.
-        services.AddScoped<IWeatherReportFileRepository, WeatherReportFileRepository>();
+        return services;
+    }
 
-        // Add integrations.
-        services
-            .AddHttpClient<IWeatherDataRepository, OpenMeteoRepository>()
-            .AddStandardResilienceHandler();
-        services.AddScoped<IWeatherDataRepository, OpenMeteoRepository>();
-
-        // Add typed configs (options pattern).
+    public static IServiceCollection AddOptions(this IServiceCollection services, IConfiguration config)
+    {
         IConfigurationSection openMeteoSection = config.GetSection(OpenMeteoOptions.SectionName);
         services.Configure<OpenMeteoOptions>(openMeteoSection);
         IConfigurationSection reportFilesSection = config.GetSection(ReportFilesOptions.SectionName);
         services.Configure<ReportFilesOptions>(reportFilesSection);
+
+        return services;
+    }
+
+    public static IServiceCollection AddTelemetry(this IServiceCollection services, IConfiguration config)
+    {
+        services.AddOpenTelemetry()
+            .WithTracing(tracingBuilder =>
+            {
+                tracingBuilder
+                    .AddHttpClientInstrumentation()
+                    .AddSource(DiagnosticHeaders.DefaultListenerName);
+            });
 
         return services;
     }

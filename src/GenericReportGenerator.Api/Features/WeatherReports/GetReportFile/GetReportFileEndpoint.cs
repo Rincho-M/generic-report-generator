@@ -1,18 +1,28 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using GenericReportGenerator.Core.WeatherReports.GetFile;
+using GenericReportGenerator.Infrastructure.WeatherReports.ReportFiles;
 
 namespace GenericReportGenerator.Api.Features.WeatherReports.GetReportFile;
 
-internal static class GetReportFileEndpoint
+public static class GetReportFileEndpoint
 {
-    internal static void Map(IEndpointRouteBuilder builder)
+    private const string ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+    public static void Map(IEndpointRouteBuilder builder)
     {
-        builder.MapGet("file", GetReportFile);
+        builder.MapGet("{reportId:guid}/file", GetReportFile);
     }
 
-    [ProducesResponseType(type: typeof(object), statusCode: 200)]
     private static async Task<IResult> GetReportFile(
+        Guid reportId,
+        GetFileSerivce fileService,
         CancellationToken ct)
     {
-        return Results.Json(null);
+        ReportFile file = await fileService.GetReportFile(reportId, ct);
+
+        return Results.File(
+            file.Content,
+            contentType: ContentType,
+            fileDownloadName: file.ReadableFileName
+        );
     }
 }
