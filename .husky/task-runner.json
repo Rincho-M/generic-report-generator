@@ -1,0 +1,26 @@
+{
+   "$schema": "https://alirezanet.github.io/Husky.Net/schema.json",
+   "tasks": [
+      {
+         "name": "format-warning",
+         "group": "pre-commit",
+         "command": "dotnet",
+         "args": ["format", "--include", "${staged}", "--verify-no-changes"],
+         "include": ["**/*.cs"]
+      },
+      {
+         "name": "format",
+         "group": "workflow",
+         "command": "dotnet",
+         "args": ["format", "--include", "${staged}"],
+         "include": ["**/*.cs"]
+      },
+      {
+         "name": "format-all",
+         "group": "workflow",
+         "command": "dotnet",
+         "args": ["format"],
+         "include": ["**/*.cs"]
+      },
+   ]
+}
