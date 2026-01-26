@@ -2,10 +2,10 @@ root = true
 
 [*]
 indent_style = space
-indent_size = 4
 charset = utf-8
 
 [*.cs]
+indent_size = 4
 
 # New line preferences.
 end_of_line = crlf
@@ -37,4 +37,4 @@ dotnet_diagnostic.IDE0120.severity = warning
 dotnet_diagnostic.IDE0121.severity = warning
 
 # Prefer collection expressions.
-dotnet_style_prefer_collection_expression = true:warning
+dotnet_style_prefer_collection_expression = false

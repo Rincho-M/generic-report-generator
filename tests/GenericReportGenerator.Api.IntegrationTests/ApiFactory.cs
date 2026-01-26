@@ -1,11 +1,14 @@
-﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
 namespace GenericReportGenerator.Api.IntegrationTests;
 
-public class AppFactory : WebApplicationFactory<Program>
+/// <summary>
+/// Provides an instance of Api project for integration testing scenarios.
+/// </summary>
+public class ApiFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {

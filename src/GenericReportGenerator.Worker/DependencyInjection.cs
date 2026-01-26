@@ -1,4 +1,4 @@
-﻿using GenericReportGenerator.Core.WeatherReports.AddFile;
+using GenericReportGenerator.Core.WeatherReports.AddFile;
 using GenericReportGenerator.Infrastructure;
 using GenericReportGenerator.Infrastructure.WeatherReports.ReportFiles;
 using GenericReportGenerator.Infrastructure.WeatherReports.WeatherData;
@@ -61,11 +61,12 @@ public static class DependencyInjection
             {
                 // TODO: config validation or something
                 string host = config["RabbitMq:Host"];
+                ushort port = ushort.Parse(config["RabbitMq:Port"]);
                 string virtualHost = config["RabbitMq:VirtualHost"];
                 string password = config["RabbitMq:Password"];
                 string username = config["RabbitMq:Username"];
 
-                builder.Host(host, virtualHost, hostConfig =>
+                builder.Host(host, port, virtualHost, hostConfig =>
                 {
                     hostConfig.Password(password);
                     hostConfig.Username(username);

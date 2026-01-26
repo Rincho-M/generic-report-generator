@@ -1,15 +1,13 @@
-﻿using FluentAssertions;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using FluentAssertions;
 using GenericReportGenerator.Api.Features.WeatherReports.CreateReport;
 using GenericReportGenerator.Api.Features.WeatherReports.GetReport;
 using GenericReportGenerator.Infrastructure.WeatherReports;
 using GenericReportGenerator.Infrastructure.WeatherReports.ReportFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using System.IO.Pipelines;
-using System.Net;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Text;
 
 namespace GenericReportGenerator.Api.IntegrationTests.WeatherReports;
 
@@ -56,6 +54,9 @@ public class WeatherReportTests : BaseTest
         reportInDb.CreatedAt.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(1));
 
         _createdReport = reportInDb;
+
+        // Wait for the report generation to complete.
+        await Task.Delay(TimeSpan.FromSeconds(1));
     }
 
 
@@ -76,43 +77,42 @@ public class WeatherReportTests : BaseTest
         GetReportResponse? responseContent = await response.Content.ReadFromJsonAsync<GetReportResponse>();
         responseContent.Should().NotBeNull();
         responseContent.Id.Should().Be(_createdReport.Id);
-        responseContent.Status.Should().Be(_createdReport.Status);
+        responseContent.Status.Should().Be(ReportStatus.Completed);
         responseContent.City.Should().Be(_createdReport.City);
         responseContent.FromDate.Should().Be(_createdReport.FromDate);
         responseContent.ToDate.Should().Be(_createdReport.ToDate);
         responseContent.CreatedAt.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(1));
     }
 
-    // TODO: add worker execution before running this test.
     [Test, Order(2)]
     public async Task GetReportFile()
     {
-        //// Arrange.
-        //_createdReport.Should().NotBeNull("CreateReport test must run before GetReportFile test.");
+        // Arrange.
+        _createdReport.Should().NotBeNull("CreateReport test must run before GetReportFile test.");
 
-        //IReportFileRepository repo = ServiceScope.ServiceProvider.GetRequiredService<IReportFileRepository>();
-        //ReportFile expectedFile = await repo.GetByReportId(_createdReport.Id);
-        //using MemoryStream memoryStream = new();
-        //await expectedFile.Content.CopyToAsync(memoryStream);
-        //byte[] expectedFileContent = memoryStream.ToArray();
+        IReportFileRepository repo = ServiceScope.ServiceProvider.GetRequiredService<IReportFileRepository>();
+        ReportFile expectedFile = await repo.GetByReportId(_createdReport.Id);
+        using MemoryStream memoryStream = new();
+        await expectedFile.Content.CopyToAsync(memoryStream);
+        byte[] expectedFileContent = memoryStream.ToArray();
 
-        //string endpointRoute = $"/api/weather-report/{_createdReport.Id}/file";
+        string endpointRoute = $"/api/weather-report/{_createdReport.Id}/file";
 
-        //// Act.
-        //HttpResponseMessage response = await HttpClient.GetAsync(endpointRoute);
+        // Act.
+        HttpResponseMessage response = await HttpClient.GetAsync(endpointRoute);
 
-        //// Assert.
-        //response.StatusCode.Should().Be(HttpStatusCode.OK);
+        // Assert.
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        //response.Content.Headers.ContentType?.MediaType.Should().Be("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.Content.Headers.ContentType?.MediaType.Should().Be("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
-        //byte[] actualContent = await response.Content.ReadAsByteArrayAsync();
-        //actualContent.Should().Equal(expectedFileContent);
+        byte[] actualContent = await response.Content.ReadAsByteArrayAsync();
+        actualContent.Should().Equal(expectedFileContent);
 
-        //ContentDispositionHeaderValue? disposition = response.Content.Headers.ContentDisposition;
-        //disposition.Should().NotBeNull();
+        ContentDispositionHeaderValue? disposition = response.Content.Headers.ContentDisposition;
+        disposition.Should().NotBeNull();
 
-        //string expectedFileName = $"WeatherReport_{_createdReport.City}_{_createdReport.FromDate:yyyyMMdd}_{_createdReport.ToDate:yyyyMMdd}.xlsx";
-        //disposition.FileName.Should().Be(expectedFileName);
+        string expectedFileName = $"WeatherReport_{_createdReport.City}_{_createdReport.FromDate:yyyyMMdd}_{_createdReport.ToDate:yyyyMMdd}.xlsx";
+        disposition.FileName.Should().Be(expectedFileName);
     }
 }

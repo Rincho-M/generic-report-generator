@@ -24,7 +24,14 @@ try
 
     IHost host = builder.Build();
 
-    host.Run();
+    if (args.Contains(TestModeArg))
+    {
+        TestHost = host;
+    }
+    else
+    {
+        host.Run();
+    }
 }
 catch (Exception ex)
 {
@@ -33,4 +40,20 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
+}
+
+/// <summary>
+/// For integration testing.
+/// </summary>
+public partial class Program
+{
+    /// <summary>
+    /// Provides access to the built host when running in test mode.
+    /// </summary>
+    public static IHost? TestHost { get; private set; }
+
+    /// <summary>
+    /// Argument to run the worker in test mode.
+    /// </summary>
+    public const string TestModeArg = "--test-mode";
 }

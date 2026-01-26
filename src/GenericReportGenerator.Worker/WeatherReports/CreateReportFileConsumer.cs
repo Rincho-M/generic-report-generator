@@ -1,4 +1,4 @@
-﻿using GenericReportGenerator.Core.WeatherReports.AddFile;
+using GenericReportGenerator.Core.WeatherReports.AddFile;
 using GenericReportGenerator.Infrastructure.WeatherReports.ReportFiles;
 using MassTransit;
 
@@ -22,6 +22,8 @@ public class CreateReportFileConsumer : IConsumer<CreateReportFileMessage>
 
     public async Task Consume(ConsumeContext<CreateReportFileMessage> context)
     {
+        _logger.LogInformation("Received {MessageType} for ReportId: {ReportId}", nameof(CreateReportFileMessage), context.Message.ReportId);
+
         await _service.AddFileToReport(context.Message.ReportId, context.CancellationToken);
     }
 }

@@ -1,23 +1,26 @@
-﻿using GenericReportGenerator.Infrastructure;
+using GenericReportGenerator.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GenericReportGenerator.Api.IntegrationTests;
 
 /// <summary>
-/// Base class for all integration tests.
+/// Base class for all integration tests. 
+/// Provides common useful fields and setup/teardown logic that executes after each test case.
 /// </summary>
-public class BaseTest
+public abstract class BaseTest
 {
-    protected AppFactory AppFactory;
+    protected ApiFactory AppFactory;
+
+    protected WorkerFactory WorkerFactory;
 
     protected HttpClient HttpClient;
 
     protected IServiceScope ServiceScope;
 
-    protected AppDbContext DbContext 
-    { 
+    protected AppDbContext DbContext
+    {
         get
-        { 
+        {
             if (!_isDbContextValid)
             {
                 _isDbContextValid = true;
@@ -29,11 +32,14 @@ public class BaseTest
     private bool _isDbContextValid = false;
 
     [SetUp]
-    public void Setup()
+    public async Task Setup()
     {
-        AppFactory = new AppFactory();
+        AppFactory = new ApiFactory();
         HttpClient = AppFactory.CreateClient();
         ServiceScope = AppFactory.Services.CreateScope();
+
+        WorkerFactory = new WorkerFactory();
+        await WorkerFactory.Start();
     }
 
     [TearDown]
@@ -48,5 +54,7 @@ public class BaseTest
             await DbContext.DisposeAsync();
             _isDbContextValid = false;
         }
+
+        await WorkerFactory.DisposeAsync();
     }
 }

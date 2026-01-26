@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
-	<NoWarn>$(NoWarn);1591</NoWarn>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,6 +27,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\GenericReportGenerator.Api\GenericReportGenerator.Api.csproj" />
     <ProjectReference Include="..\..\src\GenericReportGenerator.Migrations\GenericReportGenerator.Migrations.csproj" />
+    <ProjectReference Include="..\..\src\GenericReportGenerator.Worker\GenericReportGenerator.Worker.csproj" Aliases="WorkerAlias" />
   </ItemGroup>
 
   <ItemGroup>
