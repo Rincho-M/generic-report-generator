@@ -1,3 +1,4 @@
+using GenericReportGenerator.Shared;
 using GenericReportGenerator.Worker;
 using Serilog;
 
@@ -43,7 +44,7 @@ finally
 }
 
 /// <summary>
-/// For integration testing.
+/// For integration testing. Because generic host doesn't have it's own version of WebApplicationFactory.
 /// </summary>
 public partial class Program
 {

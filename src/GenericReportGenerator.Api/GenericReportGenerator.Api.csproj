@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GenericReportGenerator.Core\GenericReportGenerator.Core.csproj" />
+    <ProjectReference Include="..\GenericReportGenerator.Shared\GenericReportGenerator.Shared.csproj" />
   </ItemGroup>
 
 </Project>

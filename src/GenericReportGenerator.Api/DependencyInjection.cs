@@ -1,10 +1,9 @@
-﻿using GenericReportGenerator.Api.Features.WeatherReports;
+using GenericReportGenerator.Api.Features.WeatherReports;
 using GenericReportGenerator.Core.WeatherReports.GetFile;
 using GenericReportGenerator.Core.WeatherReports.GetReport;
 using GenericReportGenerator.Core.WeatherReports.QueueReport;
-using GenericReportGenerator.Infrastructure;
 using GenericReportGenerator.Infrastructure.WeatherReports.ReportFiles;
-using MassTransit;
+using GenericReportGenerator.Shared;
 using MassTransit.Logging;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
@@ -42,53 +41,6 @@ public static class DependencyInjection
         return services;
     }
 
-    public static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration config)
-    {
-        services.AddDbContext<AppDbContext>(options =>
-        {
-            options.UseNpgsql(config["ConnectionStrings:Database"]);
-        });
-
-        return services;
-    }
-
-    public static IServiceCollection AddMessegeBus(this IServiceCollection services, IConfiguration config)
-    {
-        services.AddMassTransit(busBuilder =>
-        {
-            busBuilder.UsingRabbitMq((context, builder) =>
-            {
-                // TODO: config validation or something
-                string host = config["RabbitMq:Host"];
-                ushort port = ushort.Parse(config["RabbitMq:Port"]);
-                string virtualHost = config["RabbitMq:VirtualHost"];
-                string password = config["RabbitMq:Password"];
-                string username = config["RabbitMq:Username"];
-
-                builder.Host(host, port, virtualHost, hostConfig =>
-                {
-                    hostConfig.Password(password);
-                    hostConfig.Username(username);
-                });
-
-                builder.UseMessageRetry(r =>
-                {
-                    // TODO: config validation or something
-                    int retryCount = int.Parse(config["RabbitMq:RetryPolicies:Exponential:RetryCount"]);
-                    TimeSpan minInterval = TimeSpan.Parse(config["RabbitMq:RetryPolicies:Exponential:MinInterval"]);
-                    TimeSpan maxInterval = TimeSpan.Parse(config["RabbitMq:RetryPolicies:Exponential:MaxInterval"]);
-                    TimeSpan intervalDelta = TimeSpan.Parse(config["RabbitMq:RetryPolicies:Exponential:IntervalDelta"]);
-
-                    r.Exponential(retryCount, minInterval, maxInterval, intervalDelta);
-                });
-
-                builder.ConfigureEndpoints(context);
-            });
-        });
-
-        return services;
-    }
-
     public static IServiceCollection AddOptions(this IServiceCollection services, IConfiguration config)
     {
         IConfigurationSection reportFilesSection = config.GetSection(ReportFilesOptions.SectionName);
@@ -104,6 +56,7 @@ public static class DependencyInjection
             {
                 tracingBuilder
                     .AddHttpClientInstrumentation()
+                    .AddAspNetCoreInstrumentation()
                     .AddSource(DiagnosticHeaders.DefaultListenerName);
             });
 
@@ -116,7 +69,7 @@ public static class DependencyInjection
         {
             options.AddDefaultPolicy(corsPolicy =>
             {
-                string[] origins = config.GetSection("Cors:AllowedOrigins").Get<string[]>();
+                string[] origins = config.GetRequiredArray("Cors:AllowedOrigins");
                 corsPolicy
                     .WithOrigins(origins)
                     .AllowAnyMethod()
@@ -128,6 +81,9 @@ public static class DependencyInjection
         return services;
     }
 
+    /// <summary>
+    /// For tls termination support in case of using reverse proxy.
+    /// </summary>
     public static IServiceCollection AddForwardedHeaders(this IServiceCollection services, IConfiguration config)
     {
         services.Configure<ForwardedHeadersOptions>(options =>

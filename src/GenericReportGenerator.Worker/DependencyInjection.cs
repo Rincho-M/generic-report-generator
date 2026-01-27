@@ -1,10 +1,6 @@
 using GenericReportGenerator.Core.WeatherReports.AddFile;
-using GenericReportGenerator.Infrastructure;
 using GenericReportGenerator.Infrastructure.WeatherReports.ReportFiles;
 using GenericReportGenerator.Infrastructure.WeatherReports.WeatherData;
-using GenericReportGenerator.Worker.ExceptionHandling;
-using GenericReportGenerator.Worker.WeatherReports;
-using MassTransit;
 using MassTransit.Logging;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Trace;
@@ -37,57 +33,6 @@ public static class DependencyInjection
             .AddHttpClient<IWeatherDataRepository, OpenMeteoRepository>()
             .AddStandardResilienceHandler();
         services.AddScoped<IWeatherDataRepository, OpenMeteoRepository>();
-
-        return services;
-    }
-
-    public static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration config)
-    {
-        services.AddDbContext<AppDbContext>(options =>
-        {
-            options.UseNpgsql(config["ConnectionStrings:Database"]);
-        });
-
-        return services;
-    }
-
-    public static IServiceCollection AddMessegeBus(this IServiceCollection services, IConfiguration config)
-    {
-        services.AddMassTransit(busBuilder =>
-        {
-            busBuilder.AddConsumer<CreateReportFileConsumer>();
-
-            busBuilder.UsingRabbitMq((context, builder) =>
-            {
-                // TODO: config validation or something
-                string host = config["RabbitMq:Host"];
-                ushort port = ushort.Parse(config["RabbitMq:Port"]);
-                string virtualHost = config["RabbitMq:VirtualHost"];
-                string password = config["RabbitMq:Password"];
-                string username = config["RabbitMq:Username"];
-
-                builder.Host(host, port, virtualHost, hostConfig =>
-                {
-                    hostConfig.Password(password);
-                    hostConfig.Username(username);
-                });
-
-                builder.UseMessageRetry(r =>
-                {
-                    // TODO: config validation or something
-                    int retryCount = int.Parse(config["RabbitMq:RetryPolicies:Exponential:RetryCount"]);
-                    TimeSpan minInterval = TimeSpan.Parse(config["RabbitMq:RetryPolicies:Exponential:MinInterval"]);
-                    TimeSpan maxInterval = TimeSpan.Parse(config["RabbitMq:RetryPolicies:Exponential:MaxInterval"]);
-                    TimeSpan intervalDelta = TimeSpan.Parse(config["RabbitMq:RetryPolicies:Exponential:IntervalDelta"]);
-
-                    r.Exponential(retryCount, minInterval, maxInterval, intervalDelta);
-                });
-
-                builder.UseConsumeFilter(typeof(GlobalExceptionFilter<>), context);
-
-                builder.ConfigureEndpoints(context);
-            });
-        });
 
         return services;
     }
