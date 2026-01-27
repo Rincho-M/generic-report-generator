@@ -20,6 +20,7 @@ try
     services.AddIntegrations(builder.Configuration);
     services.AddDatabase(builder.Configuration);
     services.AddMessegeBus(builder.Configuration);
+    services.AddCache(builder.Configuration);
     services.AddOptions(builder.Configuration);
     services.AddTelemetry(builder.Configuration);
 

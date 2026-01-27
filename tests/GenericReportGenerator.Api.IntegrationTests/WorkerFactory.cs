@@ -16,6 +16,7 @@ public class WorkerFactory : IAsyncDisposable
     private Dictionary<string, string?> _configOverrides = new()
     {
         { "ConnectionStrings:Database", Setup.DbContainer.GetConnectionString() },
+        { "ConnectionStrings:Redis", Setup.RedisContainer.GetConnectionString() },
         { "RabbitMq:Host", Setup.RabbitContainer.Hostname },
         { "RabbitMq:Port", Setup.RabbitContainer.GetMappedPublicPort(Setup.ApiConfiguration["RabbitMq:Port"]).ToString() },
     };

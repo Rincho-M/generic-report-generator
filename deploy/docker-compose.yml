@@ -47,7 +47,6 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__Database=Host=postgres;Database=reportdb;Username=admin;Password=admin
-      #- ConnectionStrings__Redis=redis:6379
       - RabbitMq__Host=rabbitmq
       - RabbitMq__VirtualHost=/
       - RabbitMq__Username=admin
@@ -71,7 +70,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__Database=Host=postgres;Database=reportdb;Username=admin;Password=admin
-      #- ConnectionStrings__Redis=redis:6379
+      - ConnectionStrings__Redis=redis:6379
       - RabbitMq__Host=rabbitmq
       - RabbitMq__VirtualHost=/
       - RabbitMq__Username=admin

@@ -1,8 +1,10 @@
 using GenericReportGenerator.Core.WeatherReports.AddFile;
 using GenericReportGenerator.Infrastructure.WeatherReports.ReportFiles;
 using GenericReportGenerator.Infrastructure.WeatherReports.WeatherData;
+using GenericReportGenerator.Shared;
 using MassTransit.Logging;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using OpenTelemetry.Trace;
 
 namespace GenericReportGenerator.Worker;
@@ -12,42 +14,41 @@ namespace GenericReportGenerator.Worker;
 /// </summary>
 public static class DependencyInjection
 {
-    public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration config)
+    public static void AddServices(this IServiceCollection services, IConfiguration config)
     {
         services.AddScoped<AddFileService>();
         services.AddScoped<ReportFileBuilder>();
-
-        return services;
     }
 
-    public static IServiceCollection AddRepositories(this IServiceCollection services, IConfiguration config)
+    public static void AddRepositories(this IServiceCollection services, IConfiguration config)
     {
         services.AddScoped<IReportFileRepository, ReportFileRepository>();
-
-        return services;
     }
 
-    public static IServiceCollection AddIntegrations(this IServiceCollection services, IConfiguration config)
+    public static void AddIntegrations(this IServiceCollection services, IConfiguration config)
     {
         services
             .AddHttpClient<IWeatherDataRepository, OpenMeteoRepository>()
             .AddStandardResilienceHandler();
-        services.AddScoped<IWeatherDataRepository, OpenMeteoRepository>();
-
-        return services;
+        services.AddScoped<OpenMeteoRepository>();
+        services.AddScoped<IWeatherDataRepository>(provider =>
+        {
+            var innerRepository = provider.GetRequiredService<OpenMeteoRepository>();
+            var cache = provider.GetRequiredService<IDistributedCache>();
+            var logger = provider.GetRequiredService<ILogger<CachedWeatherDataRepository>>();
+            return new CachedWeatherDataRepository(innerRepository, cache, logger);
+        });
     }
 
-    public static IServiceCollection AddOptions(this IServiceCollection services, IConfiguration config)
+    public static void AddOptions(this IServiceCollection services, IConfiguration config)
     {
         IConfigurationSection openMeteoSection = config.GetSection(OpenMeteoOptions.SectionName);
         services.Configure<OpenMeteoOptions>(openMeteoSection);
         IConfigurationSection reportFilesSection = config.GetSection(ReportFilesOptions.SectionName);
         services.Configure<ReportFilesOptions>(reportFilesSection);
-
-        return services;
     }
 
-    public static IServiceCollection AddTelemetry(this IServiceCollection services, IConfiguration config)
+    public static void AddTelemetry(this IServiceCollection services, IConfiguration config)
     {
         services.AddOpenTelemetry()
             .WithTracing(tracingBuilder =>
@@ -56,7 +57,13 @@ public static class DependencyInjection
                     .AddHttpClientInstrumentation()
                     .AddSource(DiagnosticHeaders.DefaultListenerName);
             });
+    }
 
-        return services;
+    public static void AddCache(this IServiceCollection services, IConfiguration config)
+    {
+        services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = config.GetRequiredValue("ConnectionStrings:Redis");
+        });
     }
 }

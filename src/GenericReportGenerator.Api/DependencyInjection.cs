@@ -16,40 +16,31 @@ namespace GenericReportGenerator.Api;
 /// </summary>
 public static class DependencyInjection
 {
-    public static IEndpointRouteBuilder MapEndpoints(this IEndpointRouteBuilder builder)
+    public static void MapEndpoints(this IEndpointRouteBuilder builder)
     {
         RouteGroupBuilder group = builder.MapGroup("api");
-
         Routes.Map(group);
-
-        return builder;
     }
 
-    public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration config)
+    public static void AddServices(this IServiceCollection services, IConfiguration config)
     {
         services.AddScoped<QueueReportService>();
         services.AddScoped<GetReportService>();
         services.AddScoped<GetFileSerivce>();
-
-        return services;
     }
 
-    public static IServiceCollection AddRepositories(this IServiceCollection services, IConfiguration config)
+    public static void AddRepositories(this IServiceCollection services, IConfiguration config)
     {
         services.AddScoped<IReportFileRepository, ReportFileRepository>();
-
-        return services;
     }
 
-    public static IServiceCollection AddOptions(this IServiceCollection services, IConfiguration config)
+    public static void AddOptions(this IServiceCollection services, IConfiguration config)
     {
         IConfigurationSection reportFilesSection = config.GetSection(ReportFilesOptions.SectionName);
         services.Configure<ReportFilesOptions>(reportFilesSection);
-
-        return services;
     }
 
-    public static IServiceCollection AddTelemetry(this IServiceCollection services, IConfiguration config)
+    public static void AddTelemetry(this IServiceCollection services, IConfiguration config)
     {
         services.AddOpenTelemetry()
             .WithTracing(tracingBuilder =>
@@ -59,11 +50,9 @@ public static class DependencyInjection
                     .AddAspNetCoreInstrumentation()
                     .AddSource(DiagnosticHeaders.DefaultListenerName);
             });
-
-        return services;
     }
 
-    public static IServiceCollection AddCors(this IServiceCollection services, IConfiguration config)
+    public static void AddCors(this IServiceCollection services, IConfiguration config)
     {
         services.AddCors(options =>
         {
@@ -77,20 +66,16 @@ public static class DependencyInjection
                     .AllowCredentials();
             });
         });
-
-        return services;
     }
 
     /// <summary>
     /// For tls termination support in case of using reverse proxy.
     /// </summary>
-    public static IServiceCollection AddForwardedHeaders(this IServiceCollection services, IConfiguration config)
+    public static void AddForwardedHeaders(this IServiceCollection services, IConfiguration config)
     {
         services.Configure<ForwardedHeadersOptions>(options =>
         {
             options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
         });
-
-        return services;
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Testcontainers.PostgreSql;
 using Testcontainers.RabbitMq;
+using Testcontainers.Redis;
 
 namespace GenericReportGenerator.Api.IntegrationTests;
 
@@ -15,6 +16,8 @@ public class Setup
     public static PostgreSqlContainer DbContainer { get; private set; }
 
     public static RabbitMqContainer RabbitContainer { get; private set; }
+
+    public static RedisContainer RedisContainer { get; private set; }
 
     public static IConfiguration ApiConfiguration { get; private set; }
 
@@ -33,6 +36,7 @@ public class Setup
     {
         await DbContainer.DisposeAsync();
         await RabbitContainer.DisposeAsync();
+        await RedisContainer.DisposeAsync();
     }
 
     private static IConfiguration LoadApiConfiguration()
@@ -59,15 +63,25 @@ public class Setup
         await context.Database.MigrateAsync();
     }
 
+    /// <summary>
+    /// Start test containers to use in tests.
+    /// Ensure image versions are up to date with versions specified in docker compose!
+    /// </summary>
     private async Task StartTestContainers()
     {
         DbContainer = new PostgreSqlBuilder("postgres:18.1-alpine").Build();
+
         RabbitContainer = new RabbitMqBuilder("rabbitmq:4.2-management-alpine")
             .WithPortBinding(ApiConfiguration["RabbitMq:Port"], assignRandomHostPort: true)
             .WithUsername(ApiConfiguration["RabbitMq:Username"])
             .WithPassword(ApiConfiguration["RabbitMq:Password"])
             .Build();
 
-        await Task.WhenAll(DbContainer.StartAsync(), RabbitContainer.StartAsync());
+        RedisContainer = new RedisBuilder("redis:8.4.0-alpine").Build();
+
+        await Task.WhenAll(
+            DbContainer.StartAsync(),
+            RabbitContainer.StartAsync(),
+            RedisContainer.StartAsync());
     }
 }

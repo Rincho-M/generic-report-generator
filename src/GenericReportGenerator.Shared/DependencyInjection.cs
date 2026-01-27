@@ -1,3 +1,4 @@
+using System.Reflection;
 using GenericReportGenerator.Infrastructure;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
@@ -11,20 +12,24 @@ namespace GenericReportGenerator.Shared;
 /// </summary>
 public static class DependencyInjection
 {
-    public static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration config)
+    public static void AddDatabase(this IServiceCollection services, IConfiguration config)
     {
         services.AddDbContext<AppDbContext>(options =>
         {
-            options.UseNpgsql(config["ConnectionStrings:Database"]);
+            string dbConnectionString = config.GetRequiredValue("ConnectionStrings:Database");
+            options.UseNpgsql(dbConnectionString);
         });
-
-        return services;
     }
 
-    public static IServiceCollection AddMessegeBus(this IServiceCollection services, IConfiguration config)
+    public static void AddMessegeBus(
+        this IServiceCollection services, IConfiguration config)
     {
+        Assembly consumersAssembly = Assembly.GetCallingAssembly();
+
         services.AddMassTransit(busBuilder =>
         {
+            busBuilder.AddConsumers(consumersAssembly);
+
             busBuilder.UsingRabbitMq((context, builder) =>
             {
                 IConfigurationSection rabbitConfig = config.GetRequiredSection("RabbitMq");
@@ -56,7 +61,5 @@ public static class DependencyInjection
                 builder.ConfigureEndpoints(context);
             });
         });
-
-        return services;
     }
 }
