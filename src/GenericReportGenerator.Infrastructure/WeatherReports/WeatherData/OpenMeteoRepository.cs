@@ -1,9 +1,9 @@
-﻿using Flurl;
+﻿using System.Net.Http.Json;
+using System.Text.Json.Serialization;
+using Flurl;
 using GenericReportGenerator.Infrastructure.WeatherReports.WeatherData.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.Net.Http.Json;
-using System.Text.Json.Serialization;
 
 namespace GenericReportGenerator.Infrastructure.WeatherReports.WeatherData;
 
@@ -21,7 +21,7 @@ public class OpenMeteoRepository : IWeatherDataRepository
     private const string DateFormat = "yyyy-MM-dd";
 
     public OpenMeteoRepository(
-        HttpClient httpClient, 
+        HttpClient httpClient,
         ILogger<OpenMeteoRepository> logger,
         IOptions<OpenMeteoOptions> config)
     {
@@ -34,9 +34,9 @@ public class OpenMeteoRepository : IWeatherDataRepository
     /// Get historic weather data for the specified city and date range.
     /// </summary>
     public async Task<IReadOnlyCollection<WeatherDataPoint>> GetWeatherHistory(
-        string city, 
-        DateOnly fromDate, 
-        DateOnly toDate, 
+        string city,
+        DateOnly fromDate,
+        DateOnly toDate,
         CancellationToken ct)
     {
         Coordinates cityCoordinates = await GetCityCoordinates(city, ct);
@@ -73,9 +73,9 @@ public class OpenMeteoRepository : IWeatherDataRepository
     /// Internal method to get historic weather data by coordinates from OpenMeteo API and convert it to usable format.
     /// </summary>
     private async Task<IReadOnlyCollection<WeatherDataPoint>> GetWeatherHistory(
-        Coordinates cityCoordinates, 
-        DateOnly fromDate, 
-        DateOnly toDate, 
+        Coordinates cityCoordinates,
+        DateOnly fromDate,
+        DateOnly toDate,
         CancellationToken ct)
     {
         string requestUrl = _config.ArchiveUrl
@@ -92,7 +92,7 @@ public class OpenMeteoRepository : IWeatherDataRepository
         ArchiveResponse? response = await _httpClient.GetFromJsonAsync<ArchiveResponse>(requestUrl, ct);
 
         if (response?.Daily is null ||
-            response.Daily.Time is null || 
+            response.Daily.Time is null ||
             response.Daily.MaxTemp is null)
         {
             return Array.Empty<WeatherDataPoint>();
@@ -133,10 +133,10 @@ public class OpenMeteoRepository : IWeatherDataRepository
         [JsonPropertyName("name")]
         public string? Name { get; init; }
 
-        [JsonPropertyName("latitude")] 
+        [JsonPropertyName("latitude")]
         public double? Latitude { get; init; }
 
-        [JsonPropertyName("longitude")] 
+        [JsonPropertyName("longitude")]
         public double? Longitude { get; init; }
     }
 
@@ -148,10 +148,10 @@ public class OpenMeteoRepository : IWeatherDataRepository
 
     private record DailyWeatherData
     {
-        [JsonPropertyName("time")] 
+        [JsonPropertyName("time")]
         public IReadOnlyList<string>? Time { get; init; }
 
-        [JsonPropertyName("temperature_2m_max")] 
+        [JsonPropertyName("temperature_2m_max")]
         public IReadOnlyList<double>? MaxTemp { get; init; }
     }
     #endregion

@@ -1,4 +1,4 @@
-using GenericReportGenerator.Infrastructure;
+﻿using GenericReportGenerator.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Testcontainers.PostgreSql;

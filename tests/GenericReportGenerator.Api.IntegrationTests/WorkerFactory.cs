@@ -1,4 +1,4 @@
-extern alias WorkerAlias;
+﻿extern alias WorkerAlias;
 
 using System.Reflection;
 using Microsoft.Extensions.Hosting;

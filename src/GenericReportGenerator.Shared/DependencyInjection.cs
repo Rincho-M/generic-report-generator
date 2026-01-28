@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using GenericReportGenerator.Infrastructure;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;

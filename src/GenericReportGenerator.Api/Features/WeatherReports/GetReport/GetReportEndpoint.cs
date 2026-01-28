@@ -1,6 +1,5 @@
 ﻿using GenericReportGenerator.Core.WeatherReports.GetReport;
 using GenericReportGenerator.Infrastructure.WeatherReports;
-using GenericReportGenerator.Infrastructure.WeatherReports.WeatherData.Exceptions;
 
 namespace GenericReportGenerator.Api.Features.WeatherReports.GetReport;
 

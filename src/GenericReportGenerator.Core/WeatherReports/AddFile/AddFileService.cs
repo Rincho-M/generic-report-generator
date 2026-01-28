@@ -31,7 +31,7 @@ public class AddFileService
     public async Task AddFileToReport(Guid reportId, CancellationToken ct)
     {
         Report report = await _dbContext.WeatherReports
-            .SingleAsync(r => r.Id == reportId);
+            .SingleAsync(r => r.Id == reportId, ct);
 
         IReadOnlyCollection<WeatherDataPoint> weatherData =
             await _weatherRepository.GetWeatherHistory(report.City, report.FromDate, report.ToDate, ct);

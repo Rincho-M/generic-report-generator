@@ -1,4 +1,4 @@
-using GenericReportGenerator.Core.WeatherReports.AddFile;
+﻿using GenericReportGenerator.Core.WeatherReports.AddFile;
 using GenericReportGenerator.Infrastructure.WeatherReports.ReportFiles;
 using GenericReportGenerator.Infrastructure.WeatherReports.WeatherData;
 using GenericReportGenerator.Shared;

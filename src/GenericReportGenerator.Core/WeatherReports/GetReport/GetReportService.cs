@@ -16,7 +16,7 @@ public class GetReportService
 
     public async Task<Report> GetReport(Guid id, CancellationToken ct)
     {
-        Report report = await _dbContext.WeatherReports.SingleAsync(report => report.Id == id);
+        Report report = await _dbContext.WeatherReports.SingleAsync(report => report.Id == id, ct);
 
         return report;
     }

@@ -1,4 +1,4 @@
-using GenericReportGenerator.Shared;
+﻿using GenericReportGenerator.Shared;
 using GenericReportGenerator.Worker;
 using Serilog;
 

@@ -1,7 +1,7 @@
-﻿using FluentValidation;
+﻿using System.Diagnostics;
+using FluentValidation;
 using GenericReportGenerator.Infrastructure.Common.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
-using System.Diagnostics;
 
 namespace GenericReportGenerator.Api.ExceptionHandling;
 
@@ -71,7 +71,7 @@ public class GlobalExceptionHandler : IExceptionHandler
                 response = new DetailErrorResponse(
                     Name: "SystemException",
                     TraceId: traceId,
-                    Details: "Internal server error." 
+                    Details: "Internal server error."
                 );
 
                 _logger.LogError(exception, "System error: {ErrorDetails}", exception.Message);

@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using GenericReportGenerator.Api;
 using GenericReportGenerator.Api.ExceptionHandling;
 using GenericReportGenerator.Shared;

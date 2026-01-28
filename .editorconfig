@@ -2,7 +2,7 @@ root = true
 
 [*]
 indent_style = space
-charset = utf-8
+charset = utf-8-bom
 
 [*.cs]
 indent_size = 4
@@ -37,3 +37,6 @@ dotnet_diagnostic.IDE0121.severity = warning
 
 # Prefer collection expressions.
 dotnet_style_prefer_collection_expression = false
+
+# Pass cancellation token in called methods if current method have it as a parameter.
+dotnet_diagnostic.CA2016.severity = warning

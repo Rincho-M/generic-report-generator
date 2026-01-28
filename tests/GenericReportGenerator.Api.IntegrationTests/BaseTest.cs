@@ -1,4 +1,4 @@
-using GenericReportGenerator.Infrastructure;
+﻿using GenericReportGenerator.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GenericReportGenerator.Api.IntegrationTests;

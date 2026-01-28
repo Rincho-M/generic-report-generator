@@ -1,7 +1,6 @@
 ﻿using FluentValidation;
 using GenericReportGenerator.Core.WeatherReports.QueueReport;
 using GenericReportGenerator.Infrastructure.WeatherReports;
-using GenericReportGenerator.Infrastructure.WeatherReports.WeatherData.Exceptions;
 
 namespace GenericReportGenerator.Api.Features.WeatherReports.CreateReport;
 

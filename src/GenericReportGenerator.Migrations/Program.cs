@@ -32,7 +32,7 @@ try
 
     IEnumerable<string> pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
     int migrationsCount = pendingMigrations.Count();
-    
+
     if (migrationsCount > 0)
     {
         logger.LogInformation($"Found {migrationsCount} pending migrations.");

@@ -1,4 +1,4 @@
-using GenericReportGenerator.Api.Features.WeatherReports;
+﻿using GenericReportGenerator.Api.Features.WeatherReports;
 using GenericReportGenerator.Core.WeatherReports.GetFile;
 using GenericReportGenerator.Core.WeatherReports.GetReport;
 using GenericReportGenerator.Core.WeatherReports.QueueReport;
