@@ -4,7 +4,7 @@ using System.Reflection;
 using Microsoft.Extensions.Hosting;
 using WorkerProgram = WorkerAlias::Program;
 
-namespace GenericReportGenerator.Api.IntegrationTests;
+namespace GenericReportGenerator.IntegrationTests;
 
 /// <summary>
 /// Provides an instance of Worker project for integration testing scenarios.

@@ -5,7 +5,7 @@ using Testcontainers.PostgreSql;
 using Testcontainers.RabbitMq;
 using Testcontainers.Redis;
 
-namespace GenericReportGenerator.Api.IntegrationTests;
+namespace GenericReportGenerator.IntegrationTests;
 
 /// <summary>
 /// One time setup before any tests run.

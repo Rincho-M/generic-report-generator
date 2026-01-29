@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
-namespace GenericReportGenerator.Api.IntegrationTests;
+namespace GenericReportGenerator.IntegrationTests;
 
 /// <summary>
 /// Provides an instance of Api project for integration testing scenarios.

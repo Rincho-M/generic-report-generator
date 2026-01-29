@@ -26,9 +26,9 @@
     <Project Path="src/GenericReportGenerator.Shared/GenericReportGenerator.Shared.csproj" Id="dd9e1eb0-42d0-4736-a907-c5112ac18c1f" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/GenericReportGenerator.Api.IntegrationTests/GenericReportGenerator.Api.IntegrationTests.csproj" Id="b0e6dfd0-abef-4b1e-969b-12726184b26a">
+    <Project Path="tests/GenericReportGenerator.IntegrationTests/GenericReportGenerator.IntegrationTests.csproj" Id="b0e6dfd0-abef-4b1e-969b-12726184b26a">
       <BuildDependency Project="src/GenericReportGenerator.Migrations/GenericReportGenerator.Migrations.csproj" />
     </Project>
-    <Project Path="tests/GenericReportGenerator.Api.UnitTests/GenericReportGenerator.Api.UnitTests.csproj" Id="ae6bca3f-a37b-4fb8-ab4b-b1950953766d" />
+    <Project Path="tests/GenericReportGenerator.UnitTests/GenericReportGenerator.UnitTests.csproj" Id="867fcb78-7060-4b83-b4e3-06617616f4fa" />
   </Folder>
 </Solution>

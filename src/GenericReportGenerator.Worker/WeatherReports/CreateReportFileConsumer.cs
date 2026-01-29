@@ -25,5 +25,7 @@ public class CreateReportFileConsumer : IConsumer<CreateReportFileMessage>
         _logger.LogInformation("Received {MessageType} for ReportId: {ReportId}", nameof(CreateReportFileMessage), context.Message.ReportId);
 
         await _service.AddFileToReport(context.Message.ReportId, context.CancellationToken);
+
+        _logger.LogInformation("Processed {MessageType} for ReportId: {ReportId}", nameof(CreateReportFileMessage), context.Message.ReportId);
     }
 }

@@ -9,7 +9,7 @@ using GenericReportGenerator.Infrastructure.WeatherReports.ReportFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace GenericReportGenerator.Api.IntegrationTests.WeatherReports;
+namespace GenericReportGenerator.IntegrationTests.WeatherReports;
 
 public class WeatherReportTests : BaseTest
 {

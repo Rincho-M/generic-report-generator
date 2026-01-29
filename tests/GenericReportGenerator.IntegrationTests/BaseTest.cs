@@ -1,7 +1,7 @@
 ﻿using GenericReportGenerator.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace GenericReportGenerator.Api.IntegrationTests;
+namespace GenericReportGenerator.IntegrationTests;
 
 /// <summary>
 /// Base class for all integration tests. 
