@@ -13,7 +13,7 @@ public static class Routes
     {
         RouteGroupBuilder group = builder
             .MapGroup("weather-report")
-            .WithTags("Weather Report");
+            .WithTags("Weather Reports");
 
         CreateReportEndpoint.Map(group);
         GetReportFileEndpoint.Map(group);

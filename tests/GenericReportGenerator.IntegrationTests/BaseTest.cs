@@ -1,4 +1,4 @@
-﻿using GenericReportGenerator.Infrastructure;
+﻿using GenericReportGenerator.Infrastructure.Common;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GenericReportGenerator.IntegrationTests;
@@ -26,7 +26,7 @@ public abstract class BaseTest
                 _isDbContextValid = true;
                 field = ServiceScope.ServiceProvider.GetRequiredService<AppDbContext>();
             }
-            return field;
+            return field ?? throw new NullReferenceException();
         }
     }
     private bool _isDbContextValid = false;

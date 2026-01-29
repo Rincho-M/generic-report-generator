@@ -4,8 +4,8 @@ using System.Net.Http.Json;
 using FluentAssertions;
 using GenericReportGenerator.Api.Features.WeatherReports.CreateReport;
 using GenericReportGenerator.Api.Features.WeatherReports.GetReport;
-using GenericReportGenerator.Infrastructure.WeatherReports;
-using GenericReportGenerator.Infrastructure.WeatherReports.ReportFiles;
+using GenericReportGenerator.Infrastructure.Features.WeatherReports;
+using GenericReportGenerator.Infrastructure.Features.WeatherReports.ReportFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

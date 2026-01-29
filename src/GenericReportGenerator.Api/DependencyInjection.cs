@@ -1,8 +1,9 @@
-﻿using GenericReportGenerator.Api.Features.WeatherReports;
-using GenericReportGenerator.Core.WeatherReports.GetFile;
-using GenericReportGenerator.Core.WeatherReports.GetReport;
-using GenericReportGenerator.Core.WeatherReports.QueueReport;
-using GenericReportGenerator.Infrastructure.WeatherReports.ReportFiles;
+﻿using GenericReportGenerator.Api.ExceptionHandling;
+using GenericReportGenerator.Api.Features.WeatherReports;
+using GenericReportGenerator.Core.Features.WeatherReports.CreateReport;
+using GenericReportGenerator.Core.Features.WeatherReports.GetFile;
+using GenericReportGenerator.Core.Features.WeatherReports.GetReport;
+using GenericReportGenerator.Infrastructure.Features.WeatherReports.ReportFiles;
 using GenericReportGenerator.Shared;
 using MassTransit.Logging;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -19,6 +20,22 @@ public static class DependencyInjection
     public static void MapEndpoints(this IEndpointRouteBuilder builder)
     {
         RouteGroupBuilder group = builder.MapGroup("api");
+
+        group.WithMetadata(new ProducesResponseTypeMetadata(
+            StatusCodes.Status400BadRequest,
+            typeof(ValidationErrorResponse),
+            ["application/json"]));
+
+        group.WithMetadata(new ProducesResponseTypeMetadata(
+            StatusCodes.Status422UnprocessableEntity,
+            typeof(DetailErrorResponse),
+            ["application/json"]));
+
+        group.WithMetadata(new ProducesResponseTypeMetadata(
+            StatusCodes.Status500InternalServerError,
+            typeof(DetailErrorResponse),
+            ["application/json"]));
+
         Routes.Map(group);
     }
 

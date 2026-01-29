@@ -1,4 +1,4 @@
-﻿using GenericReportGenerator.Infrastructure;
+﻿using GenericReportGenerator.Infrastructure.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

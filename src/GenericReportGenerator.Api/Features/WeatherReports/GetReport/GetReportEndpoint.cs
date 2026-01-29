@@ -1,5 +1,5 @@
-﻿using GenericReportGenerator.Core.WeatherReports.GetReport;
-using GenericReportGenerator.Infrastructure.WeatherReports;
+﻿using GenericReportGenerator.Core.Features.WeatherReports.GetReport;
+using GenericReportGenerator.Infrastructure.Features.WeatherReports;
 
 namespace GenericReportGenerator.Api.Features.WeatherReports.GetReport;
 
@@ -7,12 +7,15 @@ public static class GetReportEndpoint
 {
     public static void Map(IEndpointRouteBuilder builder)
     {
-        builder
-            .MapGet("{id:guid}", GetReport)
+        builder.MapGet("{id:guid}", GetReport)
             .WithName(nameof(GetReportEndpoint));
     }
 
-    private static async Task<IResult> GetReport(
+    /// <summary>
+    /// Get report metadata.
+    /// </summary>
+    /// <param name="id">Report id.</param>
+    public static async Task<IResult> GetReport(
         Guid id,
         GetReportService reportService,
         CancellationToken ct)

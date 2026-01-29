@@ -1,4 +1,4 @@
-﻿using GenericReportGenerator.Infrastructure.WeatherReports;
+﻿using GenericReportGenerator.Infrastructure.Features.WeatherReports;
 
 namespace GenericReportGenerator.Api.Features.WeatherReports.CreateReport;
 

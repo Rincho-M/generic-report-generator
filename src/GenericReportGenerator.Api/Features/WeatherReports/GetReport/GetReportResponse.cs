@@ -1,4 +1,4 @@
-﻿using GenericReportGenerator.Infrastructure.WeatherReports;
+﻿using GenericReportGenerator.Infrastructure.Features.WeatherReports;
 
 namespace GenericReportGenerator.Api.Features.WeatherReports.GetReport;
 
@@ -8,7 +8,7 @@ public record GetReportResponse
 
     public ReportStatus Status { get; init; }
 
-    public string City { get; init; }
+    public required string City { get; init; }
 
     public DateOnly FromDate { get; init; }
 

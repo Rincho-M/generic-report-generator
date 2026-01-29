@@ -1,4 +1,4 @@
-﻿using GenericReportGenerator.Infrastructure.WeatherReports.WeatherData;
+﻿using GenericReportGenerator.Infrastructure.Features.WeatherReports.WeatherData;
 
 namespace GenericReportGenerator.UnitTests.WeatherReports;
 

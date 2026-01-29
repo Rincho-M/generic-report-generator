@@ -1,9 +1,9 @@
 ﻿using ClosedXML.Excel;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using GenericReportGenerator.Core.WeatherReports.AddFile;
-using GenericReportGenerator.Core.WeatherReports.AddFile.Exceptions;
-using GenericReportGenerator.Infrastructure.WeatherReports.WeatherData;
+using GenericReportGenerator.Core.Features.WeatherReports.CreateReport;
+using GenericReportGenerator.Core.Features.WeatherReports.CreateReport.Exceptions;
+using GenericReportGenerator.Infrastructure.Features.WeatherReports.WeatherData;
 using static GenericReportGenerator.UnitTests.WeatherReports.ReportFileBuilderTestCases;
 
 namespace GenericReportGenerator.UnitTests.WeatherReports;

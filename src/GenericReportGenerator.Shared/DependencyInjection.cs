@@ -1,5 +1,5 @@
 ﻿using System.Reflection;
-using GenericReportGenerator.Infrastructure;
+using GenericReportGenerator.Infrastructure.Common;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;

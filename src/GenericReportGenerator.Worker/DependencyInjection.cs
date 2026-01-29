@@ -1,6 +1,6 @@
-﻿using GenericReportGenerator.Core.WeatherReports.AddFile;
-using GenericReportGenerator.Infrastructure.WeatherReports.ReportFiles;
-using GenericReportGenerator.Infrastructure.WeatherReports.WeatherData;
+﻿using GenericReportGenerator.Core.Features.WeatherReports.CreateReport;
+using GenericReportGenerator.Infrastructure.Features.WeatherReports.ReportFiles;
+using GenericReportGenerator.Infrastructure.Features.WeatherReports.WeatherData;
 using GenericReportGenerator.Shared;
 using MassTransit.Logging;
 using Microsoft.EntityFrameworkCore;
@@ -33,9 +33,9 @@ public static class DependencyInjection
         services.AddScoped<OpenMeteoRepository>();
         services.AddScoped<IWeatherDataRepository>(provider =>
         {
-            var innerRepository = provider.GetRequiredService<OpenMeteoRepository>();
-            var cache = provider.GetRequiredService<IDistributedCache>();
-            var logger = provider.GetRequiredService<ILogger<CachedWeatherDataRepository>>();
+            OpenMeteoRepository innerRepository = provider.GetRequiredService<OpenMeteoRepository>();
+            IDistributedCache cache = provider.GetRequiredService<IDistributedCache>();
+            ILogger<CachedWeatherDataRepository> logger = provider.GetRequiredService<ILogger<CachedWeatherDataRepository>>();
             return new CachedWeatherDataRepository(innerRepository, cache, logger);
         });
     }

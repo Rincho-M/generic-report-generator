@@ -1,6 +1,6 @@
 ﻿using FluentValidation;
-using GenericReportGenerator.Core.WeatherReports.QueueReport;
-using GenericReportGenerator.Infrastructure.WeatherReports;
+using GenericReportGenerator.Core.Features.WeatherReports.CreateReport;
+using GenericReportGenerator.Infrastructure.Features.WeatherReports;
 
 namespace GenericReportGenerator.Api.Features.WeatherReports.CreateReport;
 
@@ -8,8 +8,7 @@ public static class CreateReportEndpoint
 {
     public static void Map(IEndpointRouteBuilder builder)
     {
-        builder
-            .MapPost(string.Empty, CreateReport)
+        builder.MapPost(string.Empty, CreateReport)
             .WithName(nameof(CreateReportEndpoint));
     }
 

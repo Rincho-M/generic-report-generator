@@ -1,5 +1,5 @@
-﻿using GenericReportGenerator.Core.WeatherReports.GetFile;
-using GenericReportGenerator.Infrastructure.WeatherReports.ReportFiles;
+﻿using GenericReportGenerator.Core.Features.WeatherReports.GetFile;
+using GenericReportGenerator.Infrastructure.Features.WeatherReports.ReportFiles;
 
 namespace GenericReportGenerator.Api.Features.WeatherReports.GetReportFile;
 
@@ -9,15 +9,21 @@ public static class GetReportFileEndpoint
 
     public static void Map(IEndpointRouteBuilder builder)
     {
-        builder.MapGet("{reportId:guid}/file", GetReportFile);
+        builder.MapGet("{id:guid}/file", GetReportFile)
+            .WithName(nameof(GetReportFileEndpoint))
+            .Produces<Stream>(StatusCodes.Status200OK, ContentType);
     }
 
-    private static async Task<IResult> GetReportFile(
-        Guid reportId,
+    /// <summary>
+    /// Get completed report file.
+    /// </summary>
+    /// <param name="id">Report id.</param>
+    public static async Task<IResult> GetReportFile(
+        Guid id,
         GetFileSerivce fileService,
         CancellationToken ct)
     {
-        ReportFile file = await fileService.GetReportFile(reportId, ct);
+        ReportFile file = await fileService.GetReportFile(id, ct);
 
         return Results.File(
             file.Content,
