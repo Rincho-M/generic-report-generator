@@ -1,0 +1,15 @@
+﻿<Project InitialTargets="HuskySetup">
+    <!-- Define the path to the husky file -->
+    <PropertyGroup>
+        <HuskyScriptPath>$(MSBuildThisFileDirectory).husky/_/husky.sh</HuskyScriptPath>
+    </PropertyGroup>
+
+    <!-- Only run if the file does NOT exist. Means it will run only once -->
+    <Target Name="HuskySetup" Condition="'$(Configuration)' == 'Debug' And !Exists('$(HuskyScriptPath)')">
+
+        <Message Importance="high" Text="--- Husky Setup: First time install" />
+        <Exec Command="dotnet tool restore" WorkingDirectory="$(MSBuildThisFileDirectory)" StandardOutputImportance="low" />
+        <Exec Command="dotnet husky install" WorkingDirectory="$(MSBuildThisFileDirectory)" StandardOutputImportance="low" />
+
+    </Target>
+</Project>

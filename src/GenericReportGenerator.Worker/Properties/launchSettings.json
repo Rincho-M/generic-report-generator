@@ -1,0 +1,15 @@
+{
+  "profiles": {
+    "default": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      },
+      "dotnetRunMessages": true
+    },
+    "docker": {
+      "commandName": "Docker"
+    }
+  },
+  "$schema": "https://json.schemastore.org/launchsettings.json"
+}

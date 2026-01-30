@@ -1,0 +1,43 @@
+﻿root = true
+
+[*]
+indent_style = space
+charset = utf-8-bom
+
+[*.cs]
+indent_size = 4
+
+# New line preferences.
+end_of_line = crlf
+
+# Sort usings alphabetically, but place 'System.*' namespaces first.
+dotnet_sort_system_directives_first = true:warning
+
+# Remove unnecessary usings.
+dotnet_diagnostic.IDE0005.severity = warning
+
+# Prefer explicit types over var.
+csharp_style_var_for_built_in_types	= false:warning
+csharp_style_var_when_type_is_apparent = false:warning
+csharp_style_var_elsewhere = false:warning
+csharp_style_implicit_object_creation_when_type_is_apparent = true:warning
+
+# Prefer braces.
+csharp_prefer_braces = true:warning
+
+# Remove unnecessary true/false from boolean expressions.
+dotnet_style_prefer_simplified_boolean_expressions = true:warning
+dotnet_diagnostic.IDE0100.severity = warning
+
+# Convert typeof to nameof where possible.
+dotnet_diagnostic.IDE0082.severity = warning
+
+# Simplify linq expressions.
+dotnet_diagnostic.IDE0120.severity = warning
+dotnet_diagnostic.IDE0121.severity = warning
+
+# Prefer collection expressions.
+dotnet_style_prefer_collection_expression = false
+
+# Pass cancellation token in called methods if current method have it as a parameter.
+dotnet_diagnostic.CA2016.severity = warning
