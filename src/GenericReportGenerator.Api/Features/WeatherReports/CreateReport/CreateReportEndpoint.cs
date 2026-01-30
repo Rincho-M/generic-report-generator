@@ -24,7 +24,7 @@ public static class CreateReportEndpoint
         await validator.ValidateAndThrowAsync(request, ct);
 
         Report reportRequest = await reportService.QueueReport(request.City, request.FromDate, request.ToDate, ct);
-        CreateReportResponse responseData = new() { ReportId = reportRequest.Id, ReportStatus = reportRequest.Status };
+        CreateReportResponse responseData = new() { Id = reportRequest.Id, Status = reportRequest.Status };
 
         return Results.Ok(responseData);
     }
