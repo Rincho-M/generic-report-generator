@@ -43,14 +43,14 @@ public class WeatherReportTests : BaseTest
 
         CreateReportResponse? responseContent = await response.Content.ReadFromJsonAsync<CreateReportResponse>();
         responseContent.Should().NotBeNull();
-        responseContent.ReportId.Should().NotBe(default(Guid));
-        responseContent.ReportStatus.Should().Be(_exampleReport.Status);
+        responseContent.Id.Should().NotBe(default(Guid));
+        responseContent.Status.Should().Be(_exampleReport.Status);
 
-        Report? reportInDb = await DbContext.WeatherReports.SingleOrDefaultAsync(report => report.Id == responseContent.ReportId);
+        Report? reportInDb = await DbContext.WeatherReports.SingleOrDefaultAsync(report => report.Id == responseContent.Id);
         reportInDb.Should().BeEquivalentTo(_exampleReport, options => options
             .Excluding(report => report.Id)
             .Excluding(report => report.CreatedAt));
-        reportInDb.Id.Should().Be(responseContent.ReportId);
+        reportInDb.Id.Should().Be(responseContent.Id);
         reportInDb.CreatedAt.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(1));
 
         _createdReport = reportInDb;
