@@ -1,5 +1,6 @@
 ﻿using GenericReportGenerator.Infrastructure.Common;
 using GenericReportGenerator.Infrastructure.Features.WeatherReports;
+using GenericReportGenerator.Infrastructure.Features.WeatherReports.Exceptions;
 using GenericReportGenerator.Infrastructure.Features.WeatherReports.ReportFiles;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,6 +27,11 @@ public class GetFileSerivce
         Report report = await _dbContext.WeatherReports
             .AsNoTracking()
             .SingleAsync(report => report.Id == reportId, ct);
+
+        if (report.Status != ReportStatus.Completed)
+        {
+            throw new ReportNotReadyException(reportId, report.Status);
+        }
 
         ReportFile file = await _reportFileRepository.GetByReportId(reportId);
 

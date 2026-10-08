@@ -43,8 +43,9 @@ bld/
 # (https://github.com/github/gitignore/pull/3736)
 #!**/[Bb]in/*.refresh
 
-# Visual Studio 2015/2017 cache/options directory
+# IDE cache/options directory
 .vs/
+.idea/
 # Uncomment if you have tasks that create the project's static files in wwwroot
 #wwwroot/
 

@@ -23,6 +23,9 @@ public class WeatherReportTests : BaseTest
 
     private Report? _createdReport;
 
+    private static readonly TimeSpan _statusWaitTimeout = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan _statusPollInterval = TimeSpan.FromMilliseconds(200);
+
     [Test, Order(0)]
     public async Task CreateReport()
     {
@@ -55,8 +58,7 @@ public class WeatherReportTests : BaseTest
 
         _createdReport = reportInDb;
 
-        // Wait for the report generation to complete.
-        await Task.Delay(TimeSpan.FromSeconds(1));
+        await WaitForReportStatus(responseContent.Id, ReportStatus.Completed);
     }
 
 
@@ -114,5 +116,79 @@ public class WeatherReportTests : BaseTest
 
         string expectedFileName = $"WeatherReport_{_createdReport.City}_{_createdReport.FromDate:yyyyMMdd}_{_createdReport.ToDate:yyyyMMdd}.xlsx";
         disposition.FileName.Should().Be(expectedFileName);
+    }
+
+    [Test, Order(3)]
+    public async Task GetReportFile_WhenNotCompleted_Returns422()
+    {
+        // Arrange.
+        Report pendingReport = new()
+        {
+            Id = Guid.CreateVersion7(),
+            City = "Paris",
+            FromDate = DateOnly.Parse("2023-01-01"),
+            ToDate = DateOnly.Parse("2023-01-02"),
+            Status = ReportStatus.Pending,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        DbContext.WeatherReports.Add(pendingReport);
+        await DbContext.SaveChangesAsync();
+
+        string endpointRoute = $"/api/weather-report/{pendingReport.Id}/file";
+
+        // Act.
+        HttpResponseMessage response = await HttpClient.GetAsync(endpointRoute);
+
+        // Assert.
+        response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+    }
+
+    [Test, Order(4)]
+    public async Task CreateReport_InvalidCity_Fails()
+    {
+        // Arrange.
+        var requestData = new
+        {
+            City = "NonexistentCityXYZ999",
+            FromDate = DateOnly.Parse("2023-01-01"),
+            ToDate = DateOnly.Parse("2023-01-02"),
+        };
+        string endpointRoute = "/api/weather-report";
+
+        // Act.
+        HttpResponseMessage response = await HttpClient.PostAsJsonAsync(endpointRoute, requestData);
+
+        // Assert.
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        CreateReportResponse? responseContent = await response.Content.ReadFromJsonAsync<CreateReportResponse>();
+        responseContent.Should().NotBeNull();
+        responseContent.Status.Should().Be(ReportStatus.Pending);
+
+        GetReportResponse failedResponse = await WaitForReportStatus(responseContent.Id, ReportStatus.Failed);
+        failedResponse.City.Should().Be(requestData.City);
+    }
+
+    private async Task<GetReportResponse> WaitForReportStatus(Guid reportId, ReportStatus expectedStatus)
+    {
+        DateTimeOffset deadline = DateTimeOffset.UtcNow + _statusWaitTimeout;
+        GetReportResponse? lastResponse = null;
+
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            HttpResponseMessage response = await HttpClient.GetAsync($"/api/weather-report/{reportId}");
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            lastResponse = await response.Content.ReadFromJsonAsync<GetReportResponse>();
+            if (lastResponse?.Status == expectedStatus)
+            {
+                return lastResponse;
+            }
+
+            await Task.Delay(_statusPollInterval);
+        }
+
+        throw new AssertionException(
+            $"Report {reportId} did not reach status {expectedStatus} within {_statusWaitTimeout}. Last status: {lastResponse?.Status}.");
     }
 }

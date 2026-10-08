@@ -3,7 +3,6 @@ using GenericReportGenerator.Infrastructure.Features.WeatherReports.ReportFiles;
 using GenericReportGenerator.Infrastructure.Features.WeatherReports.WeatherData;
 using GenericReportGenerator.Shared;
 using MassTransit.Logging;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using OpenTelemetry.Trace;
 
@@ -16,8 +15,9 @@ public static class DependencyInjection
 {
     public static void AddServices(this IServiceCollection services, IConfiguration config)
     {
-        services.AddScoped<AddFileService>();
+        services.AddScoped<ReportFileService>();
         services.AddScoped<ReportFileBuilder>();
+        services.AddScoped<ReportProcessingService>();
     }
 
     public static void AddRepositories(this IServiceCollection services, IConfiguration config)
