@@ -26,7 +26,7 @@ The project follows a variant of **N-Layer Architecture** with **Feature-based f
 - **tests**: Integration and Unit tests.
 
 ### Data flow example
-1. **API Layer**: Receives create request, persists a "Pending" record to **PostgreSQL**, and publishes a message to **RabbitMQ**.
+1. **API Layer**: Receives create request and persists a "Pending" record **and** an outbox row to **PostgreSQL** in one transaction. A background dispatcher later publishes the outbox message to **RabbitMQ**.
 2. **Messaging**: **MassTransit** handles the reliable delivery of messages. It includes an exponential retry policy and Dead Letter Queues (DLQ) for fault tolerance.
 3. **Worker Layer**: Consumes the message, fetches data from the **OpenMeteo API** (cached if possible), generates an Excel file using **ClosedXML**, and stores the result in the file system.
 
@@ -83,21 +83,45 @@ The recommended way is to use Package Manager Console in Visual Studio.
 
 To create a migration use this command:
 
-`Add-Migration -Name #DescriptiveName# -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context ApiDbContext`
+```bash
+Add-Migration -Name #DescriptiveName# -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context AppDbContext
+```
+
+Equivalent .NET CLI (from repo root):
+
+```bash
+dotnet ef migrations add #DescriptiveName# --project src/GenericReportGenerator.Migrations --startup-project src/GenericReportGenerator.Migrations --context AppDbContext
+```
 
 *Replace #DescriptiveName# with actual migration name.*
 
 #### Remove
 To remove not applied migration use this command:
 
-`Remove-Migration -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context ApiDbContext`
+```bash
+Remove-Migration -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context AppDbContext
+```
+
+Equivalent .NET CLI (from repo root):
+
+```bash
+dotnet ef migrations remove --project src/GenericReportGenerator.Migrations --startup-project src/GenericReportGenerator.Migrations --context AppDbContext
+```
 
 *To remove already applied migration, you need to revert it in target database*
 
 #### Revert
 To revert already applied migration use this command:
 
-`Update-Database #TargetMigrationName# -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context ApiDbContext`
+```bash
+Update-Database #TargetMigrationName# -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context AppDbContext
+```
+
+Equivalent .NET CLI (from repo root).
+
+```bash
+dotnet ef database update #TargetMigrationName# --project src/GenericReportGenerator.Migrations --startup-project src/GenericReportGenerator.Migrations --context AppDbContext
+```
 
 *Replace #TargetMigrationName# with migration name you want to go to.*
 

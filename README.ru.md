@@ -26,7 +26,7 @@
 - **tests**: Интеграционные и модульные тесты.
 
 ### Пример потока данных
-1. **API Layer**: Принимает запрос на создание, сохраняет запись со статусом "Pending" в **PostgreSQL** и публикует сообщение в **RabbitMQ**.
+1. **API Layer**: Принимает запрос на создание и в одной транзакции сохраняет в **PostgreSQL** запись со статусом "Pending" **и** строку outbox. Фоновый dispatcher затем публикует сообщение из outbox в **RabbitMQ**.
 2. **Messaging**: **MassTransit** обеспечивает надежную доставку сообщений. Система включает политику экспоненциальных повторов (retry policy) и очереди недоставленных сообщений (Dead Letter Queues, DLQ) для обеспечения отказоустойчивости.
 3. **Worker Layer**: Обрабатывает сообщение, получает данные из **OpenMeteo API** (с использованием кэша, если возможно), генерирует Excel-файл с помощью **ClosedXML** и сохраняет результат в файловую систему.
 
@@ -83,21 +83,45 @@ dotnet test
 
 Для создания миграции используется команда:
 
-`Add-Migration -Name #DescriptiveName# -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context ApiDbContext`
+```bash
+Add-Migration -Name #DescriptiveName# -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context AppDbContext
+```
+
+Эквивалент .NET CLI (из корня репозитория):
+
+```bash
+dotnet ef migrations add #DescriptiveName# --project src/GenericReportGenerator.Migrations --startup-project src/GenericReportGenerator.Migrations --context AppDbContext
+```
 
 *Заменить #DescriptiveName# на фактическое название миграции.*
 
 #### Удаление (Remove)
 Чтобы удалить еще не примененную миграцию, используется:
 
-`Remove-Migration -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context ApiDbContext`
+```bash
+Remove-Migration -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context AppDbContext
+```
+
+Эквивалент .NET CLI (из корня репозитория):
+
+```bash
+dotnet ef migrations remove --project src/GenericReportGenerator.Migrations --startup-project src/GenericReportGenerator.Migrations --context AppDbContext
+```
 
 *Чтобы удалить уже примененную миграцию, сначала нужно откатить её в целевой базе данных.*
 
 #### Откат (Revert)
 Чтобы откатить уже примененную миграцию, используется:
 
-`Update-Database #TargetMigrationName# -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context ApiDbContext`
+```bash
+Update-Database #TargetMigrationName# -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context AppDbContext
+```
+
+Эквивалент .NET CLI (из корня репозитория).
+
+```bash
+dotnet ef database update #TargetMigrationName# --project src/GenericReportGenerator.Migrations --startup-project src/GenericReportGenerator.Migrations --context AppDbContext
+```
 
 *Заменить #TargetMigrationName# на название миграции, к которой нужно вернуться.*
 
