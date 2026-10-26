@@ -9,14 +9,14 @@ namespace GenericReportGenerator.Worker.Features.WeatherReports;
 /// </summary>
 public class CreateReportFileConsumer : IConsumer<CreateReportFileMessage>
 {
-    private readonly AddFileService _service;
+    private readonly ReportProcessingService _processingService;
     private readonly ILogger<CreateReportFileConsumer> _logger;
 
     public CreateReportFileConsumer(
-        AddFileService service,
+        ReportProcessingService processingService,
         ILogger<CreateReportFileConsumer> logger)
     {
-        _service = service;
+        _processingService = processingService;
         _logger = logger;
     }
 
@@ -24,7 +24,7 @@ public class CreateReportFileConsumer : IConsumer<CreateReportFileMessage>
     {
         _logger.LogInformation("Received {MessageType} for ReportId: {ReportId}", nameof(CreateReportFileMessage), context.Message.ReportId);
 
-        await _service.AddFileToReport(context.Message.ReportId, context.CancellationToken);
+        await _processingService.Process(context.Message.ReportId, context.CancellationToken);
 
         _logger.LogInformation("Processed {MessageType} for ReportId: {ReportId}", nameof(CreateReportFileMessage), context.Message.ReportId);
     }

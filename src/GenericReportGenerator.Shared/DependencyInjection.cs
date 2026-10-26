@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using GenericReportGenerator.Infrastructure.Common;
+using GenericReportGenerator.Infrastructure.Common.Exceptions;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -22,7 +23,9 @@ public static class DependencyInjection
     }
 
     public static void AddMessegeBus(
-        this IServiceCollection services, IConfiguration config)
+        this IServiceCollection services,
+        IConfiguration config,
+        Action<IBusRegistrationContext, IRabbitMqBusFactoryConfigurator>? configurePipeline = null)
     {
         Assembly consumersAssembly = Assembly.GetCallingAssembly();
 
@@ -56,7 +59,10 @@ public static class DependencyInjection
                     TimeSpan intervalDelta = TimeSpan.Parse(retryConfig.GetRequiredValue("Exponential:IntervalDelta"));
 
                     r.Exponential(retryCount, minInterval, maxInterval, intervalDelta);
+                    r.Ignore<DomainException>();
                 });
+
+                configurePipeline?.Invoke(context, builder);
 
                 builder.ConfigureEndpoints(context);
             });

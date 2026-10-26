@@ -1,7 +1,8 @@
-﻿using GenericReportGenerator.Infrastructure.Common;
+﻿using System.Text.Json;
+using GenericReportGenerator.Infrastructure.Common;
+using GenericReportGenerator.Infrastructure.Common.Outbox;
 using GenericReportGenerator.Infrastructure.Features.WeatherReports;
 using GenericReportGenerator.Infrastructure.Features.WeatherReports.ReportFiles;
-using MassTransit;
 
 namespace GenericReportGenerator.Core.Features.WeatherReports.CreateReport;
 
@@ -11,37 +12,38 @@ namespace GenericReportGenerator.Core.Features.WeatherReports.CreateReport;
 public class QueueReportService
 {
     private readonly AppDbContext _dbContext;
-    private readonly IPublishEndpoint _busPublishEndpoint;
 
-    public QueueReportService(
-        AppDbContext dbContext,
-        IPublishEndpoint busPublishEndpoint)
+    public QueueReportService(AppDbContext dbContext)
     {
         _dbContext = dbContext;
-        _busPublishEndpoint = busPublishEndpoint;
     }
 
     public async Task<Report> QueueReport(string city, DateOnly fromDate, DateOnly toDate, CancellationToken ct)
     {
-        // Add report without file to db.
+        DateTimeOffset currentDateTime = DateTimeOffset.UtcNow;
+
         Report report = new()
         {
             Id = Guid.CreateVersion7(),
             Status = ReportStatus.Pending,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = currentDateTime,
             City = city,
             FromDate = fromDate,
             ToDate = toDate,
         };
-        _dbContext.WeatherReports.Add(report);
-        await _dbContext.SaveChangesAsync(ct);
 
-        // Add report request to message bus.
-        CreateReportFileMessage reportMessage = new()
+        OutboxMessage outboxMessage = new()
         {
-            ReportId = report.Id
+            Id = Guid.CreateVersion7(),
+            Type = nameof(CreateReportFileMessage),
+            Payload = JsonSerializer.Serialize(new CreateReportFileMessage { ReportId = report.Id }),
+            CreatedAt = currentDateTime,
         };
-        await _busPublishEndpoint.Publish(reportMessage, ct);
+
+        // Add report without file and outbox message to db.
+        _dbContext.WeatherReports.Add(report);
+        _dbContext.OutboxMessages.Add(outboxMessage);
+        await _dbContext.SaveChangesAsync(ct);
 
         return report;
     }

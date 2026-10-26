@@ -1,4 +1,5 @@
-﻿using GenericReportGenerator.Infrastructure.Features.WeatherReports;
+﻿using GenericReportGenerator.Infrastructure.Common.Outbox;
+using GenericReportGenerator.Infrastructure.Features.WeatherReports;
 using Microsoft.EntityFrameworkCore;
 
 namespace GenericReportGenerator.Infrastructure.Common;
@@ -6,6 +7,8 @@ namespace GenericReportGenerator.Infrastructure.Common;
 public class AppDbContext : DbContext
 {
     public DbSet<Report> WeatherReports { get; set; }
+
+    public DbSet<OutboxMessage> OutboxMessages { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 

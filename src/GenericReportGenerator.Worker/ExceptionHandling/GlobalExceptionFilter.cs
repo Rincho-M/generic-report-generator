@@ -23,11 +23,14 @@ public class GlobalExceptionFilter<T> : IFilter<ConsumeContext<T>> where T : cla
         {
             await next.Send(context);
         }
+        catch (OperationCanceledException) when (context.CancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception exception)
         {
             using (_logger.BeginScope(new Dictionary<string, object?> { { "MessageId", context.MessageId } }))
             {
-
                 if (exception is DomainException domainException)
                 {
                     _logger.LogWarning(domainException, "Domain error: {ErrorDetails}", domainException.Message);

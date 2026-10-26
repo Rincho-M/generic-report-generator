@@ -1,48 +1,36 @@
-﻿using GenericReportGenerator.Infrastructure.Common;
 using GenericReportGenerator.Infrastructure.Features.WeatherReports;
 using GenericReportGenerator.Infrastructure.Features.WeatherReports.ReportFiles;
 using GenericReportGenerator.Infrastructure.Features.WeatherReports.WeatherData;
-using Microsoft.EntityFrameworkCore;
 
 namespace GenericReportGenerator.Core.Features.WeatherReports.CreateReport;
 
 /// <summary>
-/// Service for adding a generated weather report file to a corresponding report entry in database.
+/// Generates a weather report Excel file and saves it to file storage.
 /// </summary>
-public class AddFileService
+public class ReportFileService
 {
-    private readonly AppDbContext _dbContext;
     private readonly IWeatherDataRepository _weatherRepository;
     private readonly IReportFileRepository _reportFileRepository;
     private readonly ReportFileBuilder _reportFileBuilder;
 
-    public AddFileService(
-        AppDbContext dbContext,
+    public ReportFileService(
         IWeatherDataRepository weatherRepository,
         IReportFileRepository reportFileRepository,
-        ReportFileBuilder reportBuidler)
+        ReportFileBuilder reportFileBuilder)
     {
-        _dbContext = dbContext;
         _weatherRepository = weatherRepository;
         _reportFileRepository = reportFileRepository;
-        _reportFileBuilder = reportBuidler;
+        _reportFileBuilder = reportFileBuilder;
     }
 
-    public async Task AddFileToReport(Guid reportId, CancellationToken ct)
+    public async Task<string> GenerateAndSave(Report report, CancellationToken ct)
     {
-        Report report = await _dbContext.WeatherReports
-            .SingleAsync(r => r.Id == reportId, ct);
-
         IReadOnlyCollection<WeatherDataPoint> weatherData =
             await _weatherRepository.GetWeatherHistory(report.City, report.FromDate, report.ToDate, ct);
 
         Stream reportFile = _reportFileBuilder.Build(report.Id, report.City, report.FromDate, report.ToDate, weatherData);
         string reportFilePath = await _reportFileRepository.Save(report.Id, reportFile);
 
-        report.Status = ReportStatus.Completed;
-        report.CompletedAt = DateTimeOffset.UtcNow;
-        report.FilePath = reportFilePath;
-
-        await _dbContext.SaveChangesAsync(ct);
+        return reportFilePath;
     }
 }

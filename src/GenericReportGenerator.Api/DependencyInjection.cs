@@ -1,13 +1,14 @@
 ﻿using GenericReportGenerator.Api.ExceptionHandling;
 using GenericReportGenerator.Api.Features.WeatherReports;
+using GenericReportGenerator.Core.Common.Outbox;
 using GenericReportGenerator.Core.Features.WeatherReports.CreateReport;
 using GenericReportGenerator.Core.Features.WeatherReports.GetFile;
 using GenericReportGenerator.Core.Features.WeatherReports.GetReport;
+using GenericReportGenerator.Infrastructure.Common.Outbox;
 using GenericReportGenerator.Infrastructure.Features.WeatherReports.ReportFiles;
 using GenericReportGenerator.Shared;
 using MassTransit.Logging;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Trace;
 
 namespace GenericReportGenerator.Api;
@@ -55,6 +56,13 @@ public static class DependencyInjection
     {
         IConfigurationSection reportFilesSection = config.GetSection(ReportFilesOptions.SectionName);
         services.Configure<ReportFilesOptions>(reportFilesSection);
+    }
+
+    public static void AddOutbox(this IServiceCollection services, IConfiguration config)
+    {
+        IConfigurationSection outboxSection = config.GetSection(OutboxOptions.SectionName);
+        services.Configure<OutboxOptions>(outboxSection);
+        services.AddHostedService<OutboxDispatcher>();
     }
 
     public static void AddTelemetry(this IServiceCollection services, IConfiguration config)

@@ -26,12 +26,27 @@
 - **tests**: Интеграционные и модульные тесты.
 
 ### Пример потока данных
-1. **API Layer**: Принимает запрос на создание, сохраняет запись со статусом "Pending" в **PostgreSQL** и публикует сообщение в **RabbitMQ**.
+1. **API Layer**: Принимает запрос на создание и в одной транзакции сохраняет в **PostgreSQL** запись со статусом "Pending" **и** строку outbox. Фоновый dispatcher затем публикует сообщение из outbox в **RabbitMQ**.
 2. **Messaging**: **MassTransit** обеспечивает надежную доставку сообщений. Система включает политику экспоненциальных повторов (retry policy) и очереди недоставленных сообщений (Dead Letter Queues, DLQ) для обеспечения отказоустойчивости.
 3. **Worker Layer**: Обрабатывает сообщение, получает данные из **OpenMeteo API** (с использованием кэша, если возможно), генерирует Excel-файл с помощью **ClosedXML** и сохраняет результат в файловую систему.
 
 ### Стратегия кэширования
 К репозиторию погодных данных из внешнего API применяется паттерн **Decorator**, который добавляет функционал кэширования, что значительно снижает задержки и нагрузку на внешнее API при повторных запросах. **Redis** используется в роли хранилища кэшируемых данных.
+
+### Обработка исключений и логирование
+Исключения всплывают вверх по стеку. Сервисы не перехватывают их, чтобы логировать или преобразовывать. `catch` уместен только на границе, над которой нет своего обработчика.
+
+- **Доменные исключения** наследуют `DomainException`. Это действие пользователя, которое нарушило бы бизнес-правило: неизвестный город или запрос файла до готовности отчета.
+- **Системные исключения** — все остальное: инфраструктура, поставщик погоды, кэш или генерация файла.
+- **Валидация** (`FluentValidation`) стоит отдельно от обоих и не является доменным исключением.
+
+**API.** `GlobalExceptionHandler` — единственное место логирования HTTP-ошибок. Валидация возвращает 400 и пишется на уровне information. Доменное исключение возвращает 422 и пишется на уровне warning вместе с самим исключением. Системное исключение возвращает 500, пишется на уровне error вместе с исключением, а клиент получает общее сообщение. Тело ответа содержит `TraceId`.
+
+**Worker.** `GlobalExceptionFilter` выполняется на каждой попытке обработки, внутри пайпа повторов. Доменное исключение пишется на уровне warning, системное — на уровне error, после чего исключение пробрасывается дальше. Отмена операции не логируется. Системное исключение пишется на каждой попытке, и MassTransit повторяет такие исключения с экспоненциальной задержкой. `DomainException` из повторов исключен, поэтому оно пишется один раз и сообщение сразу уходит в fault. Fault-консьюмер ошибку повторно не логирует, а переводит отчет в статус `Failed`.
+
+**Другие границы.** Диспетчер outbox пишет собственное сообщение и продолжает опрос. Процесс миграций пишет исключение на уровне critical и пробрасывает его. Перехват в хосте API и Worker пишет fatal, если процесс завершается.
+
+**Структурированное логирование.** Serilog пишет JSON. Шаблоны используют именованные свойства, а исключение передается в вызов логгера, чтобы стек попал в событие. `TraceId` связывает логи API и Worker.
 
 ## 🚀 Деплой
 
@@ -83,21 +98,45 @@ dotnet test
 
 Для создания миграции используется команда:
 
-`Add-Migration -Name #DescriptiveName# -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context ApiDbContext`
+```bash
+Add-Migration -Name #DescriptiveName# -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context AppDbContext
+```
+
+Эквивалент .NET CLI (из корня репозитория):
+
+```bash
+dotnet ef migrations add #DescriptiveName# --project src/GenericReportGenerator.Migrations --startup-project src/GenericReportGenerator.Migrations --context AppDbContext
+```
 
 *Заменить #DescriptiveName# на фактическое название миграции.*
 
 #### Удаление (Remove)
 Чтобы удалить еще не примененную миграцию, используется:
 
-`Remove-Migration -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context ApiDbContext`
+```bash
+Remove-Migration -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context AppDbContext
+```
+
+Эквивалент .NET CLI (из корня репозитория):
+
+```bash
+dotnet ef migrations remove --project src/GenericReportGenerator.Migrations --startup-project src/GenericReportGenerator.Migrations --context AppDbContext
+```
 
 *Чтобы удалить уже примененную миграцию, сначала нужно откатить её в целевой базе данных.*
 
 #### Откат (Revert)
 Чтобы откатить уже примененную миграцию, используется:
 
-`Update-Database #TargetMigrationName# -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context ApiDbContext`
+```bash
+Update-Database #TargetMigrationName# -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context AppDbContext
+```
+
+Эквивалент .NET CLI (из корня репозитория).
+
+```bash
+dotnet ef database update #TargetMigrationName# --project src/GenericReportGenerator.Migrations --startup-project src/GenericReportGenerator.Migrations --context AppDbContext
+```
 
 *Заменить #TargetMigrationName# на название миграции, к которой нужно вернуться.*
 

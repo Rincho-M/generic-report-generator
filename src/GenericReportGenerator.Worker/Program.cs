@@ -1,5 +1,7 @@
 ﻿using GenericReportGenerator.Shared;
 using GenericReportGenerator.Worker;
+using GenericReportGenerator.Worker.ExceptionHandling;
+using MassTransit;
 using Serilog;
 
 // Bootstrap logger.
@@ -19,7 +21,10 @@ try
     services.AddRepositories(builder.Configuration);
     services.AddIntegrations(builder.Configuration);
     services.AddDatabase(builder.Configuration);
-    services.AddMessegeBus(builder.Configuration);
+    services.AddMessegeBus(builder.Configuration, (context, bus) =>
+    {
+        bus.UseConsumeFilter(typeof(GlobalExceptionFilter<>), context);
+    });
     services.AddCache(builder.Configuration);
     services.AddOptions(builder.Configuration);
     services.AddTelemetry(builder.Configuration);

@@ -26,12 +26,27 @@ The project follows a variant of **N-Layer Architecture** with **Feature-based f
 - **tests**: Integration and Unit tests.
 
 ### Data flow example
-1. **API Layer**: Receives create request, persists a "Pending" record to **PostgreSQL**, and publishes a message to **RabbitMQ**.
+1. **API Layer**: Receives create request and persists a "Pending" record **and** an outbox row to **PostgreSQL** in one transaction. A background dispatcher later publishes the outbox message to **RabbitMQ**.
 2. **Messaging**: **MassTransit** handles the reliable delivery of messages. It includes an exponential retry policy and Dead Letter Queues (DLQ) for fault tolerance.
 3. **Worker Layer**: Consumes the message, fetches data from the **OpenMeteo API** (cached if possible), generates an Excel file using **ClosedXML**, and stores the result in the file system.
 
 ### Caching Strategy
 Implements the **Decorator Pattern** for the data repository. It uses **Redis** to cache external API responses, significantly reducing latency and external API consumption for repeated requests.
+
+### Exception handling and logging
+Exceptions bubble. Services do not catch them to log or translate them. A catch belongs only at a boundary that has no handler above it.
+
+- **Domain exceptions** extend `DomainException`. They mean the user did something that would break a business rule, such as an unknown city or a file requested before the report is ready.
+- **System exceptions** are everything else: infrastructure, the weather provider, the cache, or file generation.
+- **Validation** (`FluentValidation`) is separate from both and is not a domain exception.
+
+**API.** `GlobalExceptionHandler` is the only HTTP log site. Validation returns 400 and is logged at information. A domain exception returns 422 and is logged at warning with the exception. A system exception returns 500, is logged at error with the exception, and the client gets a generic message. The body includes `TraceId`.
+
+**Worker.** `GlobalExceptionFilter` runs on each consume attempt, inside the retry pipe. It logs a domain exception at warning and a system exception at error, then rethrows. Cancellation is not logged. A system exception is logged on every attempt, and MassTransit retries those with exponential backoff. `DomainException` is ignored, so it is logged once and faults immediately. The fault consumer does not log again; it marks the report `Failed`.
+
+**Other boundaries.** The outbox dispatcher logs its own message and keeps polling. The migrations process logs the exception at critical and rethrows. The API and worker host catch logs a fatal event if the process terminates.
+
+**Structured logging.** Serilog writes JSON. Templates use named properties, and the exception is passed into the log call so the stack trace is on the event. `TraceId` ties the API and worker together.
 
 ## 🚀 Deployment
 
@@ -83,21 +98,45 @@ The recommended way is to use Package Manager Console in Visual Studio.
 
 To create a migration use this command:
 
-`Add-Migration -Name #DescriptiveName# -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context ApiDbContext`
+```bash
+Add-Migration -Name #DescriptiveName# -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context AppDbContext
+```
+
+Equivalent .NET CLI (from repo root):
+
+```bash
+dotnet ef migrations add #DescriptiveName# --project src/GenericReportGenerator.Migrations --startup-project src/GenericReportGenerator.Migrations --context AppDbContext
+```
 
 *Replace #DescriptiveName# with actual migration name.*
 
 #### Remove
 To remove not applied migration use this command:
 
-`Remove-Migration -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context ApiDbContext`
+```bash
+Remove-Migration -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context AppDbContext
+```
+
+Equivalent .NET CLI (from repo root):
+
+```bash
+dotnet ef migrations remove --project src/GenericReportGenerator.Migrations --startup-project src/GenericReportGenerator.Migrations --context AppDbContext
+```
 
 *To remove already applied migration, you need to revert it in target database*
 
 #### Revert
 To revert already applied migration use this command:
 
-`Update-Database #TargetMigrationName# -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context ApiDbContext`
+```bash
+Update-Database #TargetMigrationName# -Project GenericReportGenerator.Migrations -StartupProject GenericReportGenerator.Migrations -Context AppDbContext
+```
+
+Equivalent .NET CLI (from repo root).
+
+```bash
+dotnet ef database update #TargetMigrationName# --project src/GenericReportGenerator.Migrations --startup-project src/GenericReportGenerator.Migrations --context AppDbContext
+```
 
 *Replace #TargetMigrationName# with migration name you want to go to.*
 
