@@ -33,6 +33,21 @@ The project follows a variant of **N-Layer Architecture** with **Feature-based f
 ### Caching Strategy
 Implements the **Decorator Pattern** for the data repository. It uses **Redis** to cache external API responses, significantly reducing latency and external API consumption for repeated requests.
 
+### Exception handling and logging
+Exceptions bubble. Services do not catch them to log or translate them. A catch belongs only at a boundary that has no handler above it.
+
+- **Domain exceptions** extend `DomainException`. They mean the user did something that would break a business rule, such as an unknown city or a file requested before the report is ready.
+- **System exceptions** are everything else: infrastructure, the weather provider, the cache, or file generation.
+- **Validation** (`FluentValidation`) is separate from both and is not a domain exception.
+
+**API.** `GlobalExceptionHandler` is the only HTTP log site. Validation returns 400 and is logged at information. A domain exception returns 422 and is logged at warning with the exception. A system exception returns 500, is logged at error with the exception, and the client gets a generic message. The body includes `TraceId`.
+
+**Worker.** `GlobalExceptionFilter` runs on each consume attempt, inside the retry pipe. It logs a domain exception at warning and a system exception at error, then rethrows. Cancellation is not logged. A system exception is logged on every attempt, and MassTransit retries those with exponential backoff. `DomainException` is ignored, so it is logged once and faults immediately. The fault consumer does not log again; it marks the report `Failed`.
+
+**Other boundaries.** The outbox dispatcher logs its own message and keeps polling. The migrations process logs the exception at critical and rethrows. The API and worker host catch logs a fatal event if the process terminates.
+
+**Structured logging.** Serilog writes JSON. Templates use named properties, and the exception is passed into the log call so the stack trace is on the event. `TraceId` ties the API and worker together.
+
 ## 🚀 Deployment
 
 ### Prerequisites

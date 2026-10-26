@@ -46,9 +46,9 @@ try
         logger.LogInformation("No pending migrations found. Database is up to date.");
     }
 }
-catch
+catch (Exception exception)
 {
-    logger.LogCritical("Database migration failed.");
+    logger.LogCritical(exception, "Database migration failed.");
     throw;
 }
 
